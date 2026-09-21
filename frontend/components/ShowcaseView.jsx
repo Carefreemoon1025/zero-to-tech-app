@@ -73,6 +73,8 @@ export default function ShowcaseView() {
     return () => window.removeEventListener("scroll", onFirstScroll);
   }, []);
 
+  const work = profile?.featuredWork ?? showcase.workFallback;
+
   return (
     <div className="showcase" ref={rootRef}>
 
@@ -148,26 +150,25 @@ export default function ShowcaseView() {
           )}
         </section>
 
-        {profile && (
-          <section className="showcase-section">
-            <div className="showcase-section-head">
-              <h2 className="showcase-section-title">作品</h2>
-              <p className="showcase-section-lead">{showcase.workLead}</p>
-            </div>
-            <Link className="work-card glass" href="/text-lab" data-reveal>
-              <p className="work-kicker">{profile.featuredWork.kicker}</p>
-              <h3 className="work-title">{profile.featuredWork.title}</h3>
-              <p className="work-copy">{profile.featuredWork.copy}</p>
-              <span className="work-link">
-                {profile.featuredWork.linkLabel}
-                <span className="work-arrow" aria-hidden="true">
-                  →
-                </span>
+        {/* 作品入口：文案优先用后端的，拿不到就用本地兜底——
+            这张卡是导航，不能因为接口慢/挂了就消失 */}
+        <section className="showcase-section">
+          <div className="showcase-section-head">
+            <h2 className="showcase-section-title">作品</h2>
+            <p className="showcase-section-lead">{showcase.workLead}</p>
+          </div>
+          <Link className="work-card glass" href="/text-lab" data-reveal>
+            <p className="work-kicker">{work.kicker}</p>
+            <h3 className="work-title">{work.title}</h3>
+            <p className="work-copy">{work.copy}</p>
+            <span className="work-link">
+              {work.linkLabel}
+              <span className="work-arrow" aria-hidden="true">
+                →
               </span>
-            </Link>
-          </section>
-        )}
-
+            </span>
+          </Link>
+        </section>
       </div>
     </div>
   );
