@@ -198,19 +198,45 @@ async function main() {
     chromeStderr += chunk.toString();
   });
 
-  const cleanup = () => {
+  // 收尾必须"优雅关闭"。用 SIGKILL 结束 Chrome，它来不及把 cookie 落盘，
+  // 于是"同一个用户目录再开一次"就看不到上次的会话——那是被测对象被测试工具坑了。
+  // 正确做法是让浏览器自己收摊（CDP 的 Browser.close），关不掉再退回信号。
+  let browserWsUrl = null;
+  const exited = () => child.exitCode !== null || child.signalCode !== null;
+
+  const cleanup = async () => {
     if (opts.keepOpen) return;
-    child.kill("SIGKILL");
+    if (exited()) return;
+    if (browserWsUrl) {
+      try {
+        const browser = new Cdp(browserWsUrl);
+        await browser.ready;
+        await browser.send("Browser.close");
+        browser.close();
+      } catch {
+        /* 浏览器可能已经没了，继续走下面的兜底 */
+      }
+    } else {
+      child.kill("SIGTERM");
+    }
+    try {
+      await waitFor(exited, { timeout: 6000, interval: 100, label: "浏览器退出" });
+    } catch {
+      child.kill("SIGKILL");
+    }
+    await sleep(300);
   };
 
   try {
-    await waitFor(
+    const version = await waitFor(
       async () => {
         const res = await fetch(`http://127.0.0.1:${opts.port}/json/version`);
-        return res.ok;
+        if (!res.ok) return null;
+        return res.json();
       },
       { timeout: opts.timeout, label: "启动浏览器" },
     );
+    browserWsUrl = version.webSocketDebuggerUrl ?? null;
 
     const target = await waitFor(
       async () => {
@@ -226,6 +252,7 @@ async function main() {
     await cdp.send("Runtime.enable");
     await cdp.send("Log.enable");
     await cdp.send("Page.enable");
+    await cdp.send("Network.enable");
 
     // 等 document 加载完，再执行调用方给的表达式
     await waitFor(
@@ -261,19 +288,36 @@ async function main() {
       errors.push(`表达式抛错: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`);
     }
 
+    // 把浏览器实际持有的 cookie 一并报出来（HttpOnly 的 document.cookie 看不到，
+    // 但会话隔离靠的就是它，所以验证时必须能看见）
+    let cookies = [];
+    try {
+      const { cookies: raw } = await cdp.send("Network.getCookies", { urls: [opts.url] });
+      cookies = raw.map((c) => ({
+        name: c.name,
+        value: `${c.value.slice(0, 6)}…`,
+        httpOnly: c.httpOnly,
+        sameSite: c.sameSite,
+        expires: c.expires > 0 ? new Date(c.expires * 1000).toISOString() : "session",
+      }));
+    } catch (error) {
+      warnings.push(`读取 cookie 失败: ${error.message}`);
+    }
+
     const output = {
       url: target.url,
       value: result?.value ?? null,
+      cookies,
       consoleErrors: errors,
       consoleWarnings: warnings,
     };
     console.log(JSON.stringify(output, null, 2));
 
     cdp.close();
-    cleanup();
+    await cleanup();
     process.exit(errors.length > 0 || exceptionDetails ? 1 : 0);
   } catch (error) {
-    cleanup();
+    await cleanup();
     console.error(`✗ ${error.message}`);
     if (process.env.DEBUG_CHROME) console.error(chromeStderr.slice(-2000));
     process.exit(1);
