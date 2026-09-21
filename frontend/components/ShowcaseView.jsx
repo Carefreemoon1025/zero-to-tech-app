@@ -13,7 +13,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { animate } from "animejs";
-import Nav from "./Nav.jsx";
 import PageBackdrop from "./PageBackdrop.jsx";
 import { showcase } from "../data/site.js";
 import { apiFetch } from "../lib/api.js";
@@ -81,7 +80,6 @@ export default function ShowcaseView() {
 
       <div className="showcase-content">
         <header className="showcase-hero glass">
-          <Nav />
           <p className="showcase-eyebrow">{showcase.eyebrow}</p>
           <h1 className="showcase-title">{showcase.title}</h1>
           <p className="showcase-sub">{showcase.subtitle}</p>
@@ -170,19 +168,6 @@ export default function ShowcaseView() {
           </section>
         )}
 
-        {profile && (
-          <footer className="showcase-footer glass" data-reveal>
-            <div className="showcase-footer-item">
-              <p className="showcase-footer-label">座右铭</p>
-              <p className="showcase-footer-value">{profile.identity.motto}</p>
-            </div>
-            <div className="showcase-footer-item">
-              <p className="showcase-footer-label">正在学习</p>
-              <p className="showcase-footer-value">{profile.identity.learning}</p>
-            </div>
-            <p className="showcase-footer-note">{showcase.footerNote}</p>
-          </footer>
-        )}
       </div>
     </div>
   );

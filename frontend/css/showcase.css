@@ -182,8 +182,6 @@
   margin-bottom: 34px;
 }
 
-.showcase-hero .hero-topline { margin-bottom: 30px; }
-
 .showcase-eyebrow {
   margin-bottom: 14px;
   color: var(--ink-muted);
@@ -419,40 +417,6 @@
   transition: transform 0.3s ease;
 }
 
-/* ---------------------------------------------------------------- 页脚 */
-
-.showcase-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 40px;
-  margin-top: 44px;
-  padding: 24px 30px;
-}
-
-.showcase-footer-item { min-width: 180px; }
-
-.showcase-footer-label {
-  margin-bottom: 6px;
-  color: var(--ink-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.showcase-footer-value {
-  color: var(--ink);
-  font-size: 17px;
-  letter-spacing: -0.01em;
-}
-
-.showcase-footer-note {
-  width: 100%;
-  color: var(--ink-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
 /* ---------------------------------------------------------------- 状态 */
 
 .showcase-status {
@@ -497,7 +461,6 @@
   .stack-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .stack-card { padding: 20px 20px 18px; }
   .work-card { padding: 24px 22px; }
-  .showcase-footer { padding: 20px 22px; }
 
   /* 小屏降低模糊半径与光斑尺寸：移动端 GPU 扛不住大面积 backdrop-filter */
   .glass {
