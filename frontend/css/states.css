@@ -1,0 +1,42 @@
+/* 加载态 / 错误态 / 占位块。
+   主页文案改成从后端取之后，页面多出了"还没拿到数据"和"没拿到"两种状态，
+   这两种状态必须看得见——不能靠打底数据把问题盖过去。 */
+
+/* 标题未就绪时的占位：撑住高度，避免数据到位时页面整体跳动 */
+.hero-placeholder {
+  min-height: 132px;
+  border-radius: var(--radius-soft);
+  background: linear-gradient(
+    100deg,
+    rgba(29, 29, 31, 0.05) 30%,
+    rgba(29, 29, 31, 0.09) 50%,
+    rgba(29, 29, 31, 0.05) 70%
+  );
+  background-size: 220% 100%;
+  animation: placeholder-sheen 1.4s ease-in-out infinite;
+}
+
+@keyframes placeholder-sheen {
+  from { background-position: 180% 0; }
+  to   { background-position: -20% 0; }
+}
+
+/* 卡片里的一行状态文字（加载中 / 出错） */
+.panel-status {
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.37px;
+}
+
+.panel-status-error {
+  color: #b42318;
+  margin-bottom: 14px;
+}
+
+/* 用户开了"减少动态效果"就别再让占位块闪 */
+@media (prefers-reduced-motion: reduce) {
+  .hero-placeholder {
+    animation: none;
+  }
+}

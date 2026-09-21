@@ -31,3 +31,6 @@ venv/
 
 # 本地引导用的临时目录（下载的 deb、解包出的 pip）
 .tmp-bootstrap/
+
+# 端到端验证用的无头浏览器用户目录
+.tmp-chrome*/
