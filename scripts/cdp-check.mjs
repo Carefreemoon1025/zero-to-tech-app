@@ -15,6 +15,8 @@
  *   --touch            模拟触屏设备：媒体查询命中 (hover: none)/(pointer: coarse)，
  *                      并把鼠标事件转成真实触摸事件（这样"点一下触发 :hover"才会发生）
  *   --tap <选择器>     在元素上真按一下（配合 --touch 复现触屏上 hover 粘住的问题）
+ *   --force-hover <v>  强制媒体特性 hover 的取值：hover（有鼠标）/ none（触屏）。
+ *                      无头 Chromium 的 (hover: none) 恒为 true，不强制就测不了桌面分支
  *   --eval <js>        页面加载后执行的表达式（可为 async，支持 await）
  *   --eval-file <path> 从文件读表达式（长脚本用这个，省得跟 shell 引号打架）
  *   --profile <dir>    浏览器用户目录（默认 .tmp-chrome/profile，用它保留 cookie）
@@ -52,6 +54,7 @@ function parseArgs(argv) {
     reducedMotion: false, // 模拟"系统开了减少动态效果"
     touch: false, // 模拟触屏设备（hover: none / pointer: coarse）
     tap: null, // CSS 选择器：在上面真按一下（触屏模拟下是真实触摸事件）
+    forceHover: null, // 强制媒体特性 hover 的取值（hover / none）
   };
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
@@ -75,6 +78,7 @@ function parseArgs(argv) {
     else if (key === "--reduced-motion") opts.reducedMotion = true;
     else if (key === "--touch") opts.touch = true; // 模拟触屏（手机浏览器适配验证用）
     else if (key === "--tap") opts.tap = next(); // CSS 选择器：真按一下，复现触屏上的 :hover
+    else if (key === "--force-hover") opts.forceHover = next(); // hover / none
     else throw new Error(`未知参数：${key}`);
   }
   if (opts.evalFile) opts.eval = readFileSync(opts.evalFile, "utf8");
@@ -233,6 +237,13 @@ async function main() {
       "--no-first-run",
       "--no-default-browser-check",
       "--disable-features=Translate,MediaRouter",
+      // 悬停能力只能在这一层设：Emulation.setEmulatedMedia 不认 hover 这个特性
+      // （实测传进去 (hover: none) 照样是 true），而无头 Chromium 没有鼠标，
+      // 默认就是 (hover: none)——于是"桌面端悬停还灵不灵"会永远测不出来。
+      // Blink 的 HoverType 是个位掩码：1 = none，2 = hover。
+      ...(opts.forceHover
+        ? [`--blink-settings=primaryHoverType=${opts.forceHover === "hover" ? 2 : 1},availableHoverTypes=${opts.forceHover === "hover" ? 2 : 1}`]
+        : []),
       `--remote-debugging-port=${opts.port}`,
       `--user-data-dir=${profileDir}`,
       "about:blank", // 真正的目标 URL 等 attach 之后再 Page.navigate
@@ -335,11 +346,9 @@ async function main() {
         enabled: true,
         maxTouchPoints: 5,
       });
-      // 把鼠标事件转成触摸事件：下面 --tap 发出的 press/release 就变成一次真实点按
-      await cdp.send("Emulation.setEmitTouchEventsForMouse", {
-        enabled: true,
-        configuration: "mobile",
-      });
+      // 注意：这里**不用** Emulation.setEmitTouchEventsForMouse。
+      // 它虽然能把鼠标事件转成触摸，但一旦打开，Input.dispatchMouseEvent 这个调用
+      // 就永远不返回（实测直接把脚本挂死）；所以 --tap 走下面原生的 dispatchTouchEvent。
     }
 
     // 自己导航，而不是靠启动参数里的 URL：
@@ -440,16 +449,20 @@ async function main() {
         label: `--tap 等待元素出现：${opts.tap}`,
       }).catch(() => null);
       if (box) {
-        for (const type of ["mousePressed", "mouseReleased"]) {
-          await cdp.send("Input.dispatchMouseEvent", {
-            type,
-            x: box.x,
-            y: box.y,
-            button: "left",
-            buttons: 1,
-            clickCount: 1,
-          });
-        }
+        // 用原生触摸事件，而不是 mousePressed/mouseReleased：
+        // 触屏模拟下这才是"手指按下去再抬起来"，也才会触发 Chrome 那套
+        // "点完之后元素保持 :hover" 的行为（也就是要复现的粘住问题）。
+        await cdp.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [
+            { x: box.x, y: box.y, radiusX: 1, radiusY: 1, force: 1, id: 1 },
+          ],
+        });
+        await sleep(60); // 按下去和抬起来之间留一点间隔，更像真人
+        await cdp.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [], // touchEnd 传空数组：抬起的那个点由浏览器自己算
+        });
         await sleep(900); // 等过渡走完，这时看 :hover 有没有"粘"住
       } else {
         interactionWarnings.push(`--tap 没找到元素：${opts.tap}`);

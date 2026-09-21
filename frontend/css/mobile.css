@@ -1,0 +1,231 @@
+/* ============================================================================
+   手机浏览器适配层
+   ----------------------------------------------------------------------------
+   这个文件只装"在手机浏览器上才成立"的事：
+     ① iOS 的两个默认行为   —— 横屏自动放大字号、点链接的一块灰色高光
+     ② 触屏没有真正的悬停   —— 手指点一下之后 :hover 会**留在**元素上
+     ③ 手指比鼠标粗         —— 可点目标要 44px 见方
+     ④ 屏幕不是方的         —— 刘海/圆角/Home 指示条要躲，地址栏伸缩要跟
+
+   为什么单独一个文件、而且在 layout.jsx 里**最后**引入：
+   这里面绝大多数规则是要**覆盖**各页面已有写法的（同优先级下靠引入顺序取胜）。
+   集中成最后一层，好处是"手机端到底动了什么"一眼可查、要回退也只删一个文件。
+   ⚠️ 代价是它与被覆盖的基础值是"手动同步"关系：上面那些基础值改了，这里要跟着改。
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- ① iOS 的默认行为 */
+
+/* 横屏时 iOS 会自动放大正文字号，同一份排版横屏和竖屏字号对不上。
+   锁成 100% = "别自己算，按我 CSS 写的来"。
+   注意这**不是**禁止用户缩放（那要靠 viewport 的 user-scalable，我们没写，
+   视力不好的用户仍然能双指放大——禁掉缩放是无障碍上的硬伤）。 */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 手指点链接/按钮时，iOS 与 Android 默认盖一块偏暗的灰，
+   在浅蓝玻璃上很脏。换成品牌蓝的低透明度版本：
+   按下去是"轻轻压一下"，而不是"糊上一块灰"。 */
+a,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: rgba(27, 95, 168, 0.12);
+}
+
+/* 弹窗里的历史列表滚到底之后，别再把滚动手势"传"给背后的页面 */
+.history-list,
+.modal-overlay {
+  overscroll-behavior: contain;
+}
+
+/* ---------------------------------------------------------------- ② 触屏没有悬停 */
+
+/* 触屏上 :hover 会**粘住**：手指点过的元素会一直保持悬停态，直到点别处。
+   实测（node scripts/cdp-check.mjs --touch --tap ".stack-card"）：
+   点完卡片之后 computed translate 停在 `0px -6px`、阴影也停在悬停那一档——
+   也就是"点一下卡片，它就浮在那儿不回弹"。
+
+   所以触屏下把悬停态整体还原成默认态。下面每一条的值都对应被覆盖的那条基础规则，
+   改基础值时记得同步（玻璃的基准阴影在 showcase.css 的 .glass 里）。 */
+@media (hover: none) {
+  .stack-card:hover,
+  .note-card:hover {
+    --accent-mix: 17%; /* 与 .stack-card 的初始值一致 */
+    translate: none;
+    border-color: var(--glass-line);
+    box-shadow:
+      0 34px 60px -30px var(--shadow-strong),
+      0 4px 14px -6px var(--shadow-soft),
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 -1px 0 var(--glass-rim-soft),
+      inset 0 -22px 34px -26px var(--glass-glow-1);
+  }
+
+  .work-card:hover {
+    transform: none;
+    box-shadow:
+      0 34px 60px -30px var(--shadow-strong),
+      0 4px 14px -6px var(--shadow-soft),
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 -1px 0 var(--glass-rim-soft),
+      inset 0 -22px 34px -26px var(--glass-glow-1);
+  }
+
+  .work-card:hover .work-go {
+    transform: none;
+    background: var(--glass-chip);
+  }
+
+  /* 下面这些只是颜色/透明度变化。不还原的话，手机上会看到
+     "点过的按钮一直是半透明的""点过的链接一直带下划线"。 */
+  .primary-button:hover,
+  .featured-link:hover {
+    opacity: 1;
+  }
+
+  .ghost-button:hover,
+  .modal-close:hover {
+    border-color: var(--border-soft);
+    color: var(--text-soft);
+  }
+
+  .contact-link:hover {
+    color: var(--link);
+    border-bottom-color: transparent;
+  }
+
+  .scroll-hint:hover,
+  .status-retry:hover {
+    border-color: var(--glass-chip-line);
+  }
+
+  .theme-toggle:hover {
+    translate: none;
+    border-color: var(--glass-line);
+  }
+
+  /* 悬停没了，就得给"按下去"一个即时反馈，否则点了像没反应。
+     :active 只在手指按着的那一瞬间成立，抬手即恢复，不存在粘住的问题。 */
+  .stack-card:active,
+  .note-card:active {
+    translate: 0 -3px;
+  }
+
+  .work-card:active {
+    transform: scale(0.985);
+  }
+
+  .primary-button:active {
+    opacity: 0.72;
+  }
+
+  .ghost-button:active,
+  .modal-close:active {
+    border-color: var(--brand);
+    color: var(--brand);
+  }
+
+  .contact-link:active {
+    border-bottom-color: currentColor;
+  }
+
+  .scroll-hint:active,
+  .status-retry:active {
+    border-color: var(--link);
+  }
+
+  .nav-link:active {
+    color: var(--text-main);
+  }
+
+  .theme-toggle:active {
+    transform: scale(0.9);
+    transition: transform 0.12s ease; /* 只有按下这一下，别用 0.35s 那种慢过渡 */
+  }
+}
+
+/* ---------------------------------------------------------------- ③ 手指比鼠标粗 */
+
+/* 手指的落点没有鼠标精确，44×44 是公认的舒适下限（WCAG 2.5.5 的建议值）。
+   只在**粗指针**设备上放大：桌面端鼠标指哪打哪，布局一点不用动。
+   实测（修复前，375×812）：导航链接 59×20、历史记录按钮 86×34、
+   关闭按钮 58×34、开始分析 128×40、页尾联系链接 51×24 —— 都够不着 44。 */
+@media (pointer: coarse) {
+  .nav-link,
+  .contact-link,
+  .ghost-button,
+  .modal-close,
+  .primary-button,
+  .scroll-hint,
+  .status-retry {
+    min-height: 44px;
+  }
+
+  /* 纯文字链接得靠 flex 把行高撑到 44，而不是把字号调大 */
+  .nav-link,
+  .contact-link {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 导航两项挨得近，撑高之后行距要收紧，否则标题区被顶下一大截 */
+  .inline-links {
+    gap: 4px 20px;
+  }
+
+  /* 主题开关在小屏下是 42×42，补到 44 */
+  .theme-toggle {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* ---------------------------------------------------------------- ④ 手机屏幕的真实形状 */
+
+/* 安全区（刘海 / 圆角 / Home 指示条）。
+   layout.jsx 里声明了 viewport-fit=cover：页面铺满整块屏幕（背景到边、不留白边），
+   代价是这几个方向会被硬件裁掉，所以要自己把留白让出来。
+   非刘海设备上 env() 全是 0，等于下面这段不存在。 */
+.app-shell {
+  /* 背景仍然铺满（.app-shell 自身的渐变会画到 padding 下面），
+     让开的只是内容：.page-shell 会在安全区里居中 */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  /* 手机浏览器的 100vh 算的是"地址栏收起之后"的高度，比刚打开时看得见的那块要高：
+     首屏会多出一截，往下滚一点地址栏一收又跳一下。
+     dvh（动态视口高度）跟着地址栏实时变。写两行：不认识 dvh 的浏览器用 vh 兜底。 */
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.hero-stage {
+  min-height: 40vh;
+  min-height: 40dvh;
+}
+
+.modal-panel {
+  max-height: min(70vh, 640px);
+  max-height: min(70dvh, 640px);
+}
+
+/* 弹窗是 fixed 的，不跟着 .page-shell 走，安全区得单独让 */
+.modal-overlay {
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+}
+
+/* 固定在右下角的主题开关：横屏刘海机上 inset-right 能到 44px，不让开就被刘海压住 */
+.theme-toggle {
+  right: calc(22px + env(safe-area-inset-right));
+  bottom: calc(22px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    right: calc(14px + env(safe-area-inset-right));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+}

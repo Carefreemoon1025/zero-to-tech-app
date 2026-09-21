@@ -58,6 +58,38 @@ export default function HistoryModal({ open, status, items, error, onRetry, onCl
     };
   }, [open, onClose]);
 
+  // 弹窗打开时锁住背后的页面滚动。
+  // 手机上这条特别明显：弹窗铺满整屏，手指在遮罩上一划，背后的页面跟着滚
+  // （实测修复前 backgroundScrolledWhileModalOpen = true），关掉弹窗时页面
+  // 已经跑到别的位置了——用户会以为自己点错了什么。
+  //
+  // 为什么不用 overflow: hidden：iOS Safari 上它拦不住 body 的触摸滚动。
+  // 稳的做法是把 body 定住（position: fixed）并往上挪一个当前滚动距离，
+  // 视觉上停在原地；关闭时再把位置和滚动量一起还原。
+  useEffect(() => {
+    if (!open) return;
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      overflow: body.style.overflow,
+    };
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.overflow = "hidden";
+
+    return () => {
+      Object.assign(body.style, previous);
+      window.scrollTo(0, scrollY); // 还原到打开弹窗时那一屏，而不是跳回顶部
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (

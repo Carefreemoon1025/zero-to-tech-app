@@ -17,6 +17,9 @@ import "../css/lab.css";
 import "../css/responsive.css";
 import "../css/states.css";
 import "../css/showcase.css";
+// 手机浏览器适配层放**最后**：里面是要覆盖各页面既有写法的（同优先级靠顺序取胜），
+// 详见文件头的说明。
+import "../css/mobile.css";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 
 // 自托管中文可变字体（Noto Sans SC，按本站用到的字子集化，见 scripts/subset-fonts.py）。
@@ -36,6 +39,19 @@ const cjkFont = localFont({
 export const metadata = {
   title: "作品集",
   description: "个人作品集：技术栈展示与文字实验室（中文拼音转换与情感分析）。",
+};
+
+// 移动端视口声明。必须显式导出，不能只靠 Next 的默认值：
+// 默认给的是 `width=device-width, initial-scale=1`，少了 viewportFit: "cover"，
+// 屏幕上就永远拿不到 env(safe-area-inset-*) 的真实值，刘海、圆角、Home 指示条
+// 都会直接压在内容上（css/mobile.css 里那套安全区留白也就全部失效）。
+//
+// 这里**故意不写** maximumScale / userScalable：禁掉双指缩放是无障碍上的硬伤，
+// 视力不好的用户就是靠放大页面来读的。只让页面铺满，不动用户的缩放权。
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
