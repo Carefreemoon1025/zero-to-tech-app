@@ -12,21 +12,9 @@
    ============================================================================ */
 
 .showcase {
-  /* 海蓝色族：整套背景只用这一个色族（原来掺了紫和荧光青，饱和度偏高、
-     也容易显脏）。数值集中放这里，想再淡一点或再深一点只改这一处。 */
-  --sea-050: #f6fbfe;
-  --sea-100: #e6f1f8;
-  --sea-200: #d3e6f2;
-  --sea-300: #b9d8ea;
-  --sea-400: #8fc3dd;
-  --sea-500: #5aa5cd;
-  --sea-600: #2f80ad;
-
-  /* 这一页自己的墨色：海蓝底上用深海军蓝比纯黑干净 */
-  --ink: #0b2740;
-  --ink-soft: rgba(13, 43, 78, 0.74);
-  --ink-muted: rgba(13, 43, 78, 0.52);
-  --glass-line: rgba(255, 255, 255, 0.66);
+  /* 颜色全部来自 variables.css 的语义变量（浅色/深色两套）。
+     ⚠️ 不要在这里重新定义 --sea-* / --ink* / --glass-*：
+     局部定义的优先级高于 :root，会把深色主题直接盖掉。 */
   --glass-radius: 28px;
 
   position: relative;
@@ -64,7 +52,7 @@
   content: "";
   position: absolute;
   inset: -10%;
-  background-image: radial-gradient(rgba(17, 66, 96, 0.1) 1.2px, transparent 1.4px);
+  background-image: radial-gradient(var(--texture-dot) 1.2px, transparent 1.4px);
   background-size: 14px 14px;
   background-position: 0 0;
 }
@@ -83,7 +71,7 @@
   top: -14vmax;
   left: -8vmax;
   /* 色斑比之前更饱和、更"陡"：一来更像苹果壁纸的光，二来玻璃边缘折射它时才看得出来 */
-  background: radial-gradient(circle at 40% 40%, rgba(90, 165, 205, 0.55), rgba(90, 165, 205, 0) 68%);
+  background: var(--blob-1);
   animation: blob-drift-1 27s ease-in-out infinite;
 }
 
@@ -92,7 +80,7 @@
   height: 38vmax;
   top: 22vmax;
   right: -12vmax;
-  background: radial-gradient(circle at 50% 50%, rgba(47, 128, 173, 0.42), rgba(47, 128, 173, 0) 68%);
+  background: var(--blob-2);
   animation: blob-drift-2 33s ease-in-out infinite;
 }
 
@@ -101,7 +89,7 @@
   height: 42vmax;
   bottom: -18vmax;
   left: 18vmax;
-  background: radial-gradient(circle at 50% 50%, rgba(143, 195, 221, 0.5), rgba(143, 195, 221, 0) 70%);
+  background: var(--blob-3);
   animation: blob-drift-3 39s ease-in-out infinite;
 }
 
@@ -151,10 +139,10 @@
   background:
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, 0.42) 0%,
-      rgba(255, 255, 255, 0.16) 45%,
-      rgba(255, 255, 255, 0.10) 75%,
-      rgba(255, 255, 255, 0.26) 100%
+      var(--glass-tint-1) 0%,
+      var(--glass-tint-2) 45%,
+      var(--glass-tint-3) 75%,
+      var(--glass-tint-4) 100%
     );
   /* 磨砂：模糊半径是关键。玻璃底色本来就很透，模糊太小会显得"就是块透明塑料"，
      太大又会把背景的颜色抹平、失去通透感。14px 是看截图调出来的平衡点。 */
@@ -162,12 +150,12 @@
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   box-shadow:
     /* 落地影：离得远、铺得开，面板才像"浮"在背景上 */
-    0 34px 60px -30px rgba(12, 46, 96, 0.55),
-    0 4px 14px -6px rgba(12, 46, 96, 0.22),
+    0 34px 60px -30px var(--shadow-strong),
+    0 4px 14px -6px var(--shadow-soft),
     /* 上沿一道亮线 + 下沿一道暗线：玻璃的厚度感全在这两笔 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -22px 34px -26px rgba(255, 255, 255, 0.9);
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 -1px 0 var(--glass-rim-soft),
+    inset 0 -22px 34px -26px var(--glass-glow-1);
   overflow: hidden;
 }
 
@@ -187,8 +175,8 @@
   border-radius: inherit;
   pointer-events: none;
   background:
-    radial-gradient(120% 88% at 8% -12%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 58%),
-    radial-gradient(90% 70% at 108% 118%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 62%);
+    radial-gradient(120% 88% at 8% -12%, var(--glass-glow-1), transparent 58%),
+    radial-gradient(90% 70% at 108% 118%, var(--glass-glow-2), transparent 62%);
 }
 
 /* ---------------------------------------------------------------- 首屏 */
@@ -226,7 +214,7 @@
   line-height: 1.22;
   letter-spacing: -0.015em;
   text-wrap: balance;            /* 多行时自动均衡长度，避免最后一行只剩两个字 */
-  background: linear-gradient(104deg, #0b2440 6%, #17518f 46%, #2e86cf 84%);
+  background: var(--grad);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -247,16 +235,16 @@
   gap: 8px;
   margin-top: 42px;
   padding: 10px 20px;
-  border: 1px solid rgba(13, 43, 78, 0.14);
+  border: 1px solid var(--glass-chip-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--glass-chip);
   color: var(--ink-soft);
   font-size: 14px;
   letter-spacing: 0.02em;
   cursor: pointer;
 }
 
-.scroll-hint:hover { border-color: rgba(13, 43, 78, 0.3); }
+.scroll-hint:hover { border-color: var(--link); }
 
 .scroll-hint-arrow {
   display: inline-block;
@@ -270,7 +258,7 @@
 }
 
 .scroll-hint:focus-visible {
-  outline: 2px solid #1b5fa8;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -320,9 +308,15 @@
   translate: 0 0;
   transition: translate 0.42s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.42s ease,
     border-color 0.42s ease;
+}
+
+.note-card {
+  translate: 0 0;
+  transition: translate 0.42s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.42s ease,
+    border-color 0.42s ease;
   /* 每张卡自己的着色，来自后端数据里的 accent */
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.3) 100%),
+    linear-gradient(135deg, var(--glass-sheen) 0%, var(--glass-tint-4) 100%),
     radial-gradient(
       120% 100% at 100% 0%,
       color-mix(in srgb, var(--accent) var(--accent-mix), transparent),
@@ -331,20 +325,22 @@
 }
 
 /* 浮起来：往上抬 6px、落地影铺开一点、边缘亮一点、属于它的那点颜色也浓一点 */
-.stack-card:hover {
+.stack-card:hover,
+.note-card:hover {
   --accent-mix: 30%;
   translate: 0 -6px;
-  border-color: rgba(255, 255, 255, 0.95);
+  border-color: var(--glass-rim);
   box-shadow:
-    0 40px 66px -32px rgba(11, 45, 74, 0.5),
-    0 6px 18px -8px rgba(11, 45, 74, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -16px 28px -22px rgba(255, 255, 255, 0.8);
+    0 40px 66px -32px var(--shadow-strong),
+    0 6px 18px -8px var(--shadow-soft),
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 -16px 28px -22px var(--glass-glow-1);
 }
 
 /* 键盘用户 Tab 到卡片上的链接时也该有反馈（虽然卡片本身不可点，
    但焦点可见性是这个站的统一要求） */
-.stack-card:focus-within {
+.stack-card:focus-within,
+.note-card:focus-within {
   translate: 0 -6px;
 }
 
@@ -361,9 +357,9 @@
   height: 30px;
   padding: 0 10px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 18%, rgba(255, 255, 255, 0.72));
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, rgba(255, 255, 255, 0.6));
-  color: color-mix(in srgb, var(--accent) 78%, #0d2b4e);
+  background: color-mix(in srgb, var(--accent) var(--badge-bg-mix), var(--glass-chip));
+  border: 1px solid color-mix(in srgb, var(--accent) var(--badge-line-mix), var(--glass-chip-line));
+  color: color-mix(in srgb, var(--accent) 78%, var(--badge-ink));
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -398,8 +394,8 @@
 .stack-chips li {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: var(--glass-chip);
+  border: 1px solid var(--glass-chip-line);
   color: var(--ink-muted);
   font-size: 12px;
   white-space: nowrap;
@@ -408,7 +404,7 @@
 /* 加载骨架：和真卡片同尺寸，避免数据到位时整页跳动 */
 .stack-card--skeleton {
   min-height: 208px;
-  background-image: linear-gradient(100deg, rgba(255, 255, 255, 0.5) 30%, rgba(255, 255, 255, 0.24) 50%, rgba(255, 255, 255, 0.5) 70%);
+  background-image: linear-gradient(100deg, var(--glass-sheen) 30%, var(--glass-tint-3) 50%, var(--glass-sheen) 70%);
   background-size: 220% 100%;
   animation: skeleton-sheen 1.5s ease-in-out infinite;
 }
@@ -416,6 +412,103 @@
 @keyframes skeleton-sheen {
   from { background-position: 180% 0; }
   to   { background-position: -20% 0; }
+}
+
+/* ---------------------------------------------------------------- 工程笔记 */
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 26px 24px;
+}
+
+.note-tag {
+  align-self: flex-start;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--glass-chip);
+  border: 1px solid var(--glass-chip-line);
+  color: var(--ink-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.note-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+/* 现象 / 做法 / 结论：左边两字标签 + 右边正文，扫一眼就知道每段是什么 */
+.note-body {
+  display: grid;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.note-body > div {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.note-body dt {
+  padding-top: 1px;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.note-body dd {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+/* ---------------------------------------------------------------- 联系方式 */
+
+.contact-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 24px;
+  margin-top: 48px;
+  padding: 22px 30px;
+}
+
+.contact-label {
+  margin-right: auto;
+  color: var(--ink-muted);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.contact-link {
+  color: var(--link);
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.contact-link:hover {
+  color: var(--link-strong);
+  border-bottom-color: currentColor;
+}
+
+.contact-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* ---------------------------------------------------------------- 作品入口 */
@@ -435,13 +528,13 @@
 .work-card:hover {
   transform: translateY(-3px);
   box-shadow:
-    0 32px 60px -26px rgba(19, 58, 112, 0.46),
-    0 3px 10px -4px rgba(19, 58, 112, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 32px 60px -26px var(--shadow-strong),
+    0 3px 10px -4px var(--shadow-soft),
+    inset 0 1px 0 var(--glass-rim);
 }
 
 .work-card:focus-visible {
-  outline: 2px solid #1b5fa8;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 4px;
 }
 
@@ -456,17 +549,17 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  color: #17518f;
+  background: var(--glass-chip);
+  border: 1px solid var(--glass-chip-line);
+  color: var(--link);
   font-size: 22px;
-  box-shadow: 0 10px 24px -12px rgba(12, 46, 96, 0.5);
+  box-shadow: 0 10px 24px -12px var(--shadow-strong);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), background 0.35s ease;
 }
 
 .work-card:hover .work-go {
   transform: translateX(5px);
-  background: #ffffff;
+  background: var(--glass-line);
 }
 
 .work-kicker {
@@ -491,7 +584,7 @@
 }
 
 .work-link {
-  color: #1b5fa8;
+  color: var(--link);
   font-size: 15px;
   font-weight: 600;
 }
@@ -504,20 +597,20 @@
   font-size: 15px;
 }
 
-.showcase-status-error { color: #b42318; }
+.showcase-status-error { color: var(--danger); }
 
 .status-retry {
   margin-top: 14px;
   padding: 7px 16px;
-  border: 1px solid rgba(13, 43, 78, 0.18);
+  border: 1px solid var(--glass-chip-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--glass-chip);
   color: var(--ink);
   font-size: 14px;
   cursor: pointer;
 }
 
-.status-retry:hover { border-color: rgba(13, 43, 78, 0.36); }
+.status-retry:hover { border-color: var(--link); }
 
 /* ---------------------------------------------------------------- 滚动浮现 */
 
@@ -542,6 +635,10 @@
   .showcase-section { margin-top: 48px; }
   .showcase-title { font-size: clamp(32px, 9vw, 44px); }
   .stack-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .note-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .note-card { padding: 22px 22px 20px; }
+  .contact-strip { margin-top: 34px; padding: 18px 22px; gap: 8px 18px; }
+  .contact-label { width: 100%; margin-right: 0; }
   .stack-card { padding: 20px 20px 18px; }
   .work-card { padding: 26px 24px; gap: 16px 20px; }
   .work-go { width: 46px; height: 46px; font-size: 18px; }
@@ -573,9 +670,12 @@
   .work-card { transition: none; }
 
   /* 不做浮起动效，但仍然给一个静态的视觉反馈（改为只加重投影） */
-  .stack-card { transition: none; }
+  .stack-card,
+  .note-card { transition: none; }
   .stack-card:hover,
-  .stack-card:focus-within { translate: none; }
+  .stack-card:focus-within,
+  .note-card:hover,
+  .note-card:focus-within { translate: none; }
 }
 
 /* 锚点平滑滚动（只影响点击"下滑"这类跳转；尊重用户的动效偏好） */

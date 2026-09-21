@@ -45,6 +45,7 @@ function parseArgs(argv) {
     clip: null,
     zoom: 1,
     hover: null,
+    colorScheme: null,
     reducedMotion: false, // 模拟"系统开了减少动态效果"
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -64,6 +65,8 @@ function parseArgs(argv) {
     else if (key === "--clip") opts.clip = next(); // x,y,w,h：只截一块，用来看细节
     else if (key === "--zoom") opts.zoom = Number(next()); // 设备像素比，用来放大看边缘
     else if (key === "--hover") opts.hover = next(); // CSS 选择器：把鼠标移上去（真实指针事件，能触发 :hover）
+    else if (key === "--dark") opts.colorScheme = "dark"; // 模拟系统偏好深色
+    else if (key === "--light") opts.colorScheme = "light";
     else if (key === "--reduced-motion") opts.reducedMotion = true;
     else throw new Error(`未知参数：${key}`);
   }
@@ -290,11 +293,12 @@ async function main() {
     await cdp.send("Page.enable");
     await cdp.send("Network.enable");
 
-    // 模拟"系统里开了减少动态效果"，验证无障碍分支真的生效
-    if (opts.reducedMotion) {
-      await cdp.send("Emulation.setEmulatedMedia", {
-        features: [{ name: "prefers-reduced-motion", value: "reduce" }],
-      });
+    // 模拟系统偏好（减少动态效果 / 深浅色），验证无障碍与主题分支
+    const mediaFeatures = [];
+    if (opts.reducedMotion) mediaFeatures.push({ name: "prefers-reduced-motion", value: "reduce" });
+    if (opts.colorScheme) mediaFeatures.push({ name: "prefers-color-scheme", value: opts.colorScheme });
+    if (mediaFeatures.length > 0) {
+      await cdp.send("Emulation.setEmulatedMedia", { features: mediaFeatures });
     }
 
     if (opts.zoom && opts.zoom !== 1) {

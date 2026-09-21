@@ -17,6 +17,7 @@ import "../css/lab.css";
 import "../css/responsive.css";
 import "../css/states.css";
 import "../css/showcase.css";
+import ThemeToggle from "../components/ThemeToggle.jsx";
 
 // 自托管中文可变字体（Noto Sans SC，按本站用到的字子集化，见 scripts/subset-fonts.py）。
 // 为什么不用系统字体栈了事：字体栈里的 "PingFang SC" 只有 Mac 有，
@@ -39,8 +40,24 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="zh-CN" className={cjkFont.variable}>
+    // suppressHydrationWarning：主题脚本会在水合之前给 <html> 写上 data-theme，
+    // 服务端渲染时并不知道这个值，React 会因此报水合不一致。
+    // 这里只抑制这一层的属性差异（React 官方对主题脚本的推荐做法）。
+    <html lang="zh-CN" className={cjkFont.variable} suppressHydrationWarning>
       <body>
+        {/* 主题判定必须在首次绘制之前完成，所以放在 body 的第一位同步执行：
+            等 React 水合再判定的话，深色用户会先看到一下白屏。
+            优先用户手选过的值，其次跟系统设置。 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');" +
+              "var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;" +
+              "document.documentElement.dataset.theme=d?'dark':'light';}catch(e){" +
+              "document.documentElement.dataset.theme='light';}})();",
+          }}
+        />
+        <ThemeToggle />
         <div className="app-shell">
           <div className="page-shell">
             <main className="page-content">{children}</main>

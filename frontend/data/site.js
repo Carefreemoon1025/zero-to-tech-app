@@ -15,7 +15,14 @@ export const showcase = {
     "下面是我做这个站用到的技术栈。每一个面板都不是图标墙——里面写的是我拿它具体做了什么、以及为什么这么选。",
   scrollHint: "下滑看看",
   stackLead: "按「从页面到服务器」的顺序排：框架、UI、动画、接口、语言、存储、会话、代理、进程。",
+  notesLead: "技术栈人人都会写；这里记的是我真实踩过的坑，以及当时怎么做的取舍。",
   workLead: "技术栈不是一个清单，是一个点得开的东西。",
+  // 联系方式兜底：它属于导航性质，接口拿不到也必须显示
+  contactFallback: {
+    label: "想聊聊？",
+    github: { label: "GitHub", href: "https://github.com/Carefreemoon1025" },
+    email: { label: "noth1ngmoon@outlook.com", href: "mailto:noth1ngmoon@outlook.com" },
+  },
   // 作品入口卡的兜底文案。
   // 这张卡是**导航**，不是"内容"：接口没返回或者挂了的时候它也必须在那儿，
   // 否则整个页面就没有通往文字实验室的路了（顶部导航已经去掉了）。

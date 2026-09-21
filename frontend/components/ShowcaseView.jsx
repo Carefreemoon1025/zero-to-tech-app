@@ -23,6 +23,7 @@ export default function ShowcaseView() {
   const rootRef = useRef(null);
   const hintRef = useRef(null);
   const [stack, setStack] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [error, setError] = useState("");
@@ -31,14 +32,17 @@ export default function ShowcaseView() {
     setStatus("loading");
     setError("");
     try {
-      // 两个接口并行拿：技术栈面板 + 作品与个人信息
-      const [stackRes, profileRes] = await Promise.all([
+      // 三个接口并行拿：技术栈面板 + 工程笔记 + 作品与联系方式
+      const [stackRes, notesRes, profileRes] = await Promise.all([
         apiFetch("/api/stack"),
+        apiFetch("/api/notes"),
         apiFetch("/api/profile"),
       ]);
       if (!stackRes.ok) throw new Error(`技术栈加载失败（HTTP ${stackRes.status}）`);
+      if (!notesRes.ok) throw new Error(`工程笔记加载失败（HTTP ${notesRes.status}）`);
       if (!profileRes.ok) throw new Error(`作品数据加载失败（HTTP ${profileRes.status}）`);
       setStack(await stackRes.json());
+      setNotes(await notesRes.json());
       setProfile(await profileRes.json());
       setStatus("ready");
     } catch (err) {
@@ -74,6 +78,7 @@ export default function ShowcaseView() {
   }, []);
 
   const work = profile?.featuredWork ?? showcase.workFallback;
+  const contact = profile?.contact ?? showcase.contactFallback;
 
   return (
     <div className="showcase" ref={rootRef}>
@@ -150,6 +155,37 @@ export default function ShowcaseView() {
           )}
         </section>
 
+        {status === "ready" && notes.length > 0 && (
+          <section className="showcase-section" id="notes">
+            <div className="showcase-section-head">
+              <h2 className="showcase-section-title">工程笔记</h2>
+              <p className="showcase-section-lead">{showcase.notesLead}</p>
+            </div>
+            <div className="note-grid">
+              {notes.map((note) => (
+                <article className="note-card glass" key={note.key} data-reveal>
+                  <span className="note-tag">{note.tag}</span>
+                  <h3 className="note-title">{note.title}</h3>
+                  <dl className="note-body">
+                    <div>
+                      <dt>现象</dt>
+                      <dd>{note.problem}</dd>
+                    </div>
+                    <div>
+                      <dt>做法</dt>
+                      <dd>{note.fix}</dd>
+                    </div>
+                    <div>
+                      <dt>结论</dt>
+                      <dd>{note.takeaway}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* 作品入口：文案优先用后端的，拿不到就用本地兜底——
             这张卡是导航，不能因为接口慢/挂了就消失 */}
         <section className="showcase-section">
@@ -169,6 +205,22 @@ export default function ShowcaseView() {
             </span>
           </Link>
         </section>
+
+        {/* 联系方式：属于导航，始终渲染（接口拿不到就用兜底文案） */}
+        <footer className="contact-strip glass">
+          <span className="contact-label">{contact.label}</span>
+          <a
+            className="contact-link"
+            href={contact.github.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {contact.github.label}
+          </a>
+          <a className="contact-link" href={contact.email.href}>
+            {contact.email.label}
+          </a>
+        </footer>
       </div>
     </div>
   );

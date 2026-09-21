@@ -3,15 +3,15 @@
    可读性与可点性优先。 */
 .panel {
   padding: 26px 30px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.62) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: linear-gradient(150deg, var(--panel-bg-1) 0%, var(--panel-bg-2) 100%);
+  border: 1px solid var(--panel-line);
   border-radius: var(--radius-panel);
   backdrop-filter: blur(14px) saturate(170%);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   box-shadow:
-    0 30px 54px -28px rgba(12, 46, 96, 0.45),
-    0 3px 12px -5px rgba(12, 46, 96, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 30px 54px -28px var(--shadow-strong),
+    0 3px 12px -5px var(--shadow-soft),
+    inset 0 1px 0 var(--panel-rim);
 }
 
 /* 卡片的初始状态：藏起来 + 微微下沉，等 AnimatedCardGrid 用 anime.js 把它们抬起来。

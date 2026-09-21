@@ -1,4 +1,73 @@
+/* ============================================================================
+   设计变量：**颜色只在这里定义**，其它 CSS 一律用 var(...) 引用。
+   深色模式 = 文件末尾那段 [data-theme="dark"] 覆盖同一批变量，别处一行都不用改。
+
+   两套色都围绕「海蓝」这一族：
+     浅色：近白的海蓝底 + 白色玻璃
+     深色：深海蓝底 + 极淡的白色玻璃。
+           注意深色不是把浅色反相——玻璃在深色下依然靠一点点白来提亮边缘，
+           只是浓度降到十分之一左右；反相会把边缘变成黑线，玻璃就没了。
+   ============================================================================ */
+
 :root {
+  /* 告诉浏览器当前是浅色：滚动条、输入框、自动填充这些原生控件会跟着走 */
+  color-scheme: light;
+
+  /* ── 页面背景（海蓝色族） ── */
+  --sea-050: #f6fbfe;
+  --sea-100: #e6f1f8;
+  --sea-200: #d3e6f2;
+  --sea-300: #b9d8ea;
+  --sea-400: #8fc3dd;
+  --sea-500: #5aa5cd;
+  --sea-600: #2f80ad;
+  --blob-1: radial-gradient(circle at 40% 40%, rgba(90, 165, 205, 0.55), rgba(90, 165, 205, 0) 68%);
+  --blob-2: radial-gradient(circle at 50% 50%, rgba(47, 128, 173, 0.42), rgba(47, 128, 173, 0) 68%);
+  --blob-3: radial-gradient(circle at 50% 50%, rgba(143, 195, 221, 0.5), rgba(143, 195, 221, 0) 70%);
+  --texture-dot: rgba(17, 66, 96, 0.1);
+
+  /* ── 文字 ── */
+  --ink: #0b2740;
+  --ink-soft: rgba(11, 39, 64, 0.74);
+  --ink-muted: rgba(11, 39, 64, 0.52);
+
+  /* ── 玻璃 ── */
+  --glass-line: rgba(255, 255, 255, 0.66);
+  --glass-tint-1: rgba(255, 255, 255, 0.42);
+  --glass-tint-2: rgba(255, 255, 255, 0.16);
+  --glass-tint-3: rgba(255, 255, 255, 0.1);
+  --glass-tint-4: rgba(255, 255, 255, 0.26);
+  --glass-sheen: rgba(255, 255, 255, 0.62);
+  --glass-chip: rgba(255, 255, 255, 0.58);
+  --glass-chip-line: rgba(255, 255, 255, 0.7);
+  --glass-glow-1: rgba(255, 255, 255, 0.7);
+  --glass-glow-2: rgba(255, 255, 255, 0.42);
+  --glass-rim: rgba(255, 255, 255, 0.98);
+  --glass-rim-soft: rgba(255, 255, 255, 0.35);
+  --shadow-strong: rgba(12, 46, 96, 0.55);
+  --shadow-soft: rgba(12, 46, 96, 0.22);
+
+  /* ── 面板（文字实验室那两张卡：比展示卡实一点，里面是表单控件） ── */
+  --panel-bg-1: rgba(255, 255, 255, 0.82);
+  --panel-bg-2: rgba(255, 255, 255, 0.62);
+  --panel-line: rgba(255, 255, 255, 0.7);
+  --panel-rim: rgba(255, 255, 255, 0.95);
+
+  /* ── 语义色 ── */
+  --link: #17518f;
+  --link-strong: #0f3a6b;
+  --danger: #b42318;
+  --overlay: rgba(0, 0, 0, 0.32);
+  --focus-ring: rgba(27, 95, 168, 0.9);
+  --skeleton-a: rgba(29, 29, 31, 0.05);
+  --skeleton-b: rgba(29, 29, 31, 0.09);
+  /* 徽章文字 = 品牌色往这个颜色混。
+     浅色底往深海军蓝混（更沉、对比强），深色底必须往白混，否则品牌色糊在深底上看不清。 */
+  --badge-ink: #0d2b4e;
+  --badge-bg-mix: 18%;
+  --badge-line-mix: 34%;
+
+  /* ── 基础色板（lab / cards / states 在用） ── */
   --page-bg: #f5f5f7;
   --surface: #ffffff;
   --surface-soft: #fbfbfd;
@@ -10,11 +79,79 @@
   --shadow: 3px 5px 30px rgba(0, 0, 0, 0.08);
   /* 全站统一的主色渐变（首页标题、文字实验室标题共用同一支） */
   --grad: linear-gradient(104deg, #0f3a6b 0%, #1c6fd0 58%, #38b6ff 100%);
+
   --radius-panel: 32px;
   --radius-soft: 18px;
   --maxw: 980px;
+
   /* 自托管中文字体在前（保证各平台一致），系统字体在后兜底：
      子集之外的生僻字会落到 PingFang / 雅黑上，不会变豆腐块。 */
   --font: var(--font-cjk), -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+/* ============================================================================
+   深色：只覆盖变量值，其余 CSS 一行都不用改
+   ============================================================================ */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --sea-050: #0a1926;
+  --sea-100: #0d2130;
+  --sea-200: #102a3c;
+  --sea-300: #133349;
+  --sea-400: #1b4a68;
+  --sea-500: #2a6c92;
+  --sea-600: #3f8fb5;
+  --blob-1: radial-gradient(circle at 40% 40%, rgba(56, 132, 176, 0.4), rgba(56, 132, 176, 0) 68%);
+  --blob-2: radial-gradient(circle at 50% 50%, rgba(28, 90, 124, 0.45), rgba(28, 90, 124, 0) 68%);
+  --blob-3: radial-gradient(circle at 50% 50%, rgba(64, 148, 186, 0.32), rgba(64, 148, 186, 0) 70%);
+  --texture-dot: rgba(150, 205, 230, 0.085);
+
+  --ink: #e9f3f9;
+  --ink-soft: rgba(233, 243, 249, 0.76);
+  --ink-muted: rgba(233, 243, 249, 0.52);
+
+  --glass-line: rgba(255, 255, 255, 0.16);
+  --glass-tint-1: rgba(255, 255, 255, 0.1);
+  --glass-tint-2: rgba(255, 255, 255, 0.04);
+  --glass-tint-3: rgba(255, 255, 255, 0.02);
+  --glass-tint-4: rgba(255, 255, 255, 0.07);
+  --glass-sheen: rgba(255, 255, 255, 0.09);
+  --glass-chip: rgba(255, 255, 255, 0.08);
+  --glass-chip-line: rgba(255, 255, 255, 0.13);
+  --glass-glow-1: rgba(255, 255, 255, 0.14);
+  --glass-glow-2: rgba(255, 255, 255, 0.07);
+  --glass-rim: rgba(255, 255, 255, 0.22);
+  --glass-rim-soft: rgba(255, 255, 255, 0.08);
+  --shadow-strong: rgba(0, 0, 0, 0.62);
+  --shadow-soft: rgba(0, 0, 0, 0.36);
+
+  --panel-bg-1: rgba(255, 255, 255, 0.07);
+  --panel-bg-2: rgba(255, 255, 255, 0.04);
+  --panel-line: rgba(255, 255, 255, 0.14);
+  --panel-rim: rgba(255, 255, 255, 0.18);
+
+  --link: #7cc4e8;
+  --link-strong: #a8daf2;
+  --danger: #ff9f8f;
+  --overlay: rgba(2, 10, 16, 0.62);
+  --focus-ring: rgba(124, 196, 232, 0.9);
+  --skeleton-a: rgba(255, 255, 255, 0.06);
+  --skeleton-b: rgba(255, 255, 255, 0.12);
+  --badge-ink: #f2f9fd;
+  --badge-bg-mix: 30%;
+  --badge-line-mix: 46%;
+
+  --page-bg: #0a1926;
+  --surface: #10222f;
+  --surface-soft: rgba(255, 255, 255, 0.055);
+  --text-main: #e9f3f9;
+  --text-soft: rgba(233, 243, 249, 0.74);
+  --text-muted: rgba(233, 243, 249, 0.5);
+  --brand: #3f9bff;
+  --border-soft: rgba(255, 255, 255, 0.14);
+  --shadow: 0 6px 30px rgba(0, 0, 0, 0.45);
+  --grad: linear-gradient(104deg, #bfe6ff 0%, #7cc4e8 55%, #4aa3d8 100%);
 }

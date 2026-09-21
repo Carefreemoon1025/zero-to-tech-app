@@ -8,9 +8,9 @@
   border-radius: var(--radius-soft);
   background: linear-gradient(
     100deg,
-    rgba(29, 29, 31, 0.05) 30%,
-    rgba(29, 29, 31, 0.09) 50%,
-    rgba(29, 29, 31, 0.05) 70%
+    var(--skeleton-a) 30%,
+    var(--skeleton-b) 50%,
+    var(--skeleton-a) 70%
   );
   background-size: 220% 100%;
   animation: placeholder-sheen 1.4s ease-in-out infinite;
@@ -30,7 +30,7 @@
 }
 
 .panel-status-error {
-  color: #b42318;
+  color: var(--danger);
   margin-bottom: 14px;
 }
 
@@ -52,4 +52,54 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------------------------------------------------------------- 主题开关 */
+
+.theme-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--glass-line);
+  border-radius: 50%;
+  background: var(--glass-chip);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: 0 12px 26px -14px var(--shadow-strong), inset 0 1px 0 var(--glass-rim);
+  transition: translate 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+}
+
+.theme-toggle:hover {
+  translate: 0 -3px;
+  border-color: var(--link);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* 两枚图标都在 DOM 里，按主题显示其中一枚：这样服务端渲染的标记与客户端一致 */
+[data-theme="dark"] .theme-icon--moon,
+[data-theme="light"] .theme-icon--sun {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle { transition: none; }
+  .theme-toggle:hover { translate: none; }
+}
+
+@media (max-width: 640px) {
+  .theme-toggle { right: 14px; bottom: 14px; width: 42px; height: 42px; }
 }

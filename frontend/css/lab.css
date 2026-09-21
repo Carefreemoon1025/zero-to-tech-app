@@ -40,7 +40,7 @@
 
 .lab-form textarea:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.14);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
 .lab-form textarea::placeholder {
@@ -56,12 +56,12 @@
 
 /* 超过后端上限时的字数提示：当场变色，不用等请求回来才报错 */
 .lab-count-over {
-  color: #b42318;
+  color: var(--danger);
 }
 
 /* 分析请求失败时的提示文案 */
 .lab-error {
-  color: #b42318;
+  color: var(--danger);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -178,7 +178,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.32);
+  background: var(--overlay);
 }
 
 .modal-panel {

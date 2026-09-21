@@ -21,4 +21,11 @@ PROFILE = {
         "motto": "已识乾坤大，尤怜草木青",
         "learning": "零到全栈",
     },
+    # 页尾的联系方式。放后端是因为它也是"内容"，
+    # 但前端必须留一份兜底——联系方式属于导航，接口挂了也不能消失。
+    "contact": {
+        "label": "想聊聊？",
+        "github": {"label": "GitHub", "href": "https://github.com/Carefreemoon1025"},
+        "email": {"label": "noth1ngmoon@outlook.com", "href": "mailto:noth1ngmoon@outlook.com"},
+    },
 }

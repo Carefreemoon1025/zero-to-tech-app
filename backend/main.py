@@ -6,6 +6,7 @@
 接口：
     GET  /api/profile   主页文案（作品、座右铭）
     GET  /api/stack     展示页的技术栈面板
+    GET  /api/notes     工程笔记（真实踩过的坑与取舍）
     POST /api/analyze   文本 → 拼音 + 情感分数
     GET  /api/history   当前会话的历史记录（倒序）
     GET  /api/health    健康检查（部署时给 nginx / 监控用）
@@ -25,6 +26,7 @@ from pydantic import BaseModel
 
 import analysis
 import db
+from notes import NOTES
 from profile import PROFILE
 from stack import STACK
 
@@ -167,6 +169,16 @@ def get_stack() -> list[dict]:
     首页第一屏也顺带证明了"这个站的数据是活的"。
     """
     return STACK
+
+
+@app.get("/api/notes", summary="工程笔记")
+def get_notes() -> list[dict]:
+    """首页「工程笔记」区块的内容。
+
+    和 /api/stack 一样属于"内容"，放后端便于随时改文案；
+    筛选交给前端（分类标签）。
+    """
+    return NOTES
 
 
 @app.get("/api/health", summary="健康检查")
