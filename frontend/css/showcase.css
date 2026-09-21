@@ -12,8 +12,18 @@
    ============================================================================ */
 
 .showcase {
-  /* 这一页自己的墨色：浅蓝底上用深蓝比纯黑更干净 */
-  --ink: #0d2b4e;
+  /* 海蓝色族：整套背景只用这一个色族（原来掺了紫和荧光青，饱和度偏高、
+     也容易显脏）。数值集中放这里，想再淡一点或再深一点只改这一处。 */
+  --sea-050: #f6fbfe;
+  --sea-100: #e6f1f8;
+  --sea-200: #d3e6f2;
+  --sea-300: #b9d8ea;
+  --sea-400: #8fc3dd;
+  --sea-500: #5aa5cd;
+  --sea-600: #2f80ad;
+
+  /* 这一页自己的墨色：海蓝底上用深海军蓝比纯黑干净 */
+  --ink: #0b2740;
   --ink-soft: rgba(13, 43, 78, 0.74);
   --ink-muted: rgba(13, 43, 78, 0.52);
   --glass-line: rgba(255, 255, 255, 0.66);
@@ -33,7 +43,13 @@
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(130% 90% at 50% -10%, #f4f9ff 0%, #d9ebff 32%, #bedafc 66%, #a8cbf8 100%);
+    radial-gradient(
+      130% 90% at 50% -10%,
+      var(--sea-050) 0%,
+      var(--sea-100) 34%,
+      var(--sea-200) 68%,
+      var(--sea-300) 100%
+    );
 }
 
 /* 纹理层：这不是装饰，是折射的"底片"。
@@ -48,7 +64,7 @@
   content: "";
   position: absolute;
   inset: -10%;
-  background-image: radial-gradient(rgba(23, 66, 122, 0.13) 1.2px, transparent 1.4px);
+  background-image: radial-gradient(rgba(17, 66, 96, 0.1) 1.2px, transparent 1.4px);
   background-size: 14px 14px;
   background-position: 0 0;
 }
@@ -67,7 +83,7 @@
   top: -14vmax;
   left: -8vmax;
   /* 色斑比之前更饱和、更"陡"：一来更像苹果壁纸的光，二来玻璃边缘折射它时才看得出来 */
-  background: radial-gradient(circle at 40% 40%, rgba(72, 152, 255, 0.95), rgba(72, 152, 255, 0) 68%);
+  background: radial-gradient(circle at 40% 40%, rgba(90, 165, 205, 0.55), rgba(90, 165, 205, 0) 68%);
   animation: blob-drift-1 27s ease-in-out infinite;
 }
 
@@ -76,7 +92,7 @@
   height: 38vmax;
   top: 22vmax;
   right: -12vmax;
-  background: radial-gradient(circle at 50% 50%, rgba(133, 118, 255, 0.85), rgba(133, 118, 255, 0) 68%);
+  background: radial-gradient(circle at 50% 50%, rgba(47, 128, 173, 0.42), rgba(47, 128, 173, 0) 68%);
   animation: blob-drift-2 33s ease-in-out infinite;
 }
 
@@ -85,7 +101,7 @@
   height: 42vmax;
   bottom: -18vmax;
   left: 18vmax;
-  background: radial-gradient(circle at 50% 50%, rgba(80, 224, 255, 0.8), rgba(80, 224, 255, 0) 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(143, 195, 221, 0.5), rgba(143, 195, 221, 0) 70%);
   animation: blob-drift-3 39s ease-in-out infinite;
 }
 
@@ -293,10 +309,43 @@
   flex-direction: column;
   gap: 10px;
   padding: 24px 24px 22px;
+  /* 悬停浮起用 **translate** 而不是 transform：
+     滚动浮现动画是用 anime.js 写的内联 transform（translateY/scale），
+     内联样式优先级高于 CSS，用 transform 做 hover 会被它压掉。
+     translate / scale 是独立属性，和 transform 互不干扰，两者会叠加。 */
+  /* 每张卡带一点所属技术的品牌色（React 青、Python 黄、anime 粉…），
+     但浓度压得很低——这一页的基本色是海蓝，品牌色只做暗示，不然九张卡
+     会把整页的脸色带跑（26% 时粉色那张在海蓝底上很跳）。 */
+  --accent-mix: 17%;
+  translate: 0 0;
+  transition: translate 0.42s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.42s ease,
+    border-color 0.42s ease;
   /* 每张卡自己的着色，来自后端数据里的 accent */
   background-image:
     linear-gradient(135deg, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.3) 100%),
-    radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 68%);
+    radial-gradient(
+      120% 100% at 100% 0%,
+      color-mix(in srgb, var(--accent) var(--accent-mix), transparent),
+      transparent 68%
+    );
+}
+
+/* 浮起来：往上抬 6px、落地影铺开一点、边缘亮一点、属于它的那点颜色也浓一点 */
+.stack-card:hover {
+  --accent-mix: 30%;
+  translate: 0 -6px;
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 40px 66px -32px rgba(11, 45, 74, 0.5),
+    0 6px 18px -8px rgba(11, 45, 74, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -16px 28px -22px rgba(255, 255, 255, 0.8);
+}
+
+/* 键盘用户 Tab 到卡片上的链接时也该有反馈（虽然卡片本身不可点，
+   但焦点可见性是这个站的统一要求） */
+.stack-card:focus-within {
+  translate: 0 -6px;
 }
 
 .stack-card-head {
@@ -522,6 +571,11 @@
   .reveal-armed [data-reveal] { transform: none; }
 
   .work-card { transition: none; }
+
+  /* 不做浮起动效，但仍然给一个静态的视觉反馈（改为只加重投影） */
+  .stack-card { transition: none; }
+  .stack-card:hover,
+  .stack-card:focus-within { translate: none; }
 }
 
 /* 锚点平滑滚动（只影响点击"下滑"这类跳转；尊重用户的动效偏好） */

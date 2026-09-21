@@ -44,6 +44,7 @@ function parseArgs(argv) {
     fullPage: false,
     clip: null,
     zoom: 1,
+    hover: null,
     reducedMotion: false, // 模拟"系统开了减少动态效果"
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -62,6 +63,7 @@ function parseArgs(argv) {
     else if (key === "--full-page") opts.fullPage = true;
     else if (key === "--clip") opts.clip = next(); // x,y,w,h：只截一块，用来看细节
     else if (key === "--zoom") opts.zoom = Number(next()); // 设备像素比，用来放大看边缘
+    else if (key === "--hover") opts.hover = next(); // CSS 选择器：把鼠标移上去（真实指针事件，能触发 :hover）
     else if (key === "--reduced-motion") opts.reducedMotion = true;
     else throw new Error(`未知参数：${key}`);
   }
@@ -356,6 +358,30 @@ async function main() {
          text: document.body.innerText.replace(/\\n{2,}/g, "\\n"),
          cookies: document.cookie,
        })`;
+
+    // 悬停：必须用 CDP 的真实指针事件，合成 MouseEvent 触发不了 CSS 的 :hover
+    if (opts.hover) {
+      const { result: box } = await cdp.send("Runtime.evaluate", {
+        expression: `(() => {
+          const el = document.querySelector(${JSON.stringify(opts.hover)});
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+        })()`,
+        returnByValue: true,
+      });
+      if (box.value) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: box.value.x,
+          y: box.value.y,
+          buttons: 0,
+        });
+        await sleep(700); // 等过渡动画走完
+      } else {
+        warnings.push(`--hover 没找到元素：${opts.hover}`);
+      }
+    }
 
     let result;
     let exceptionDetails;
