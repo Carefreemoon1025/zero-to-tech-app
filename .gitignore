@@ -1,6 +1,9 @@
 # 依赖
 node_modules/
 
+# npm 缓存（本沙箱的家目录只读，缓存改放在项目内）
+.npm-cache/
+
 # Next.js 构建产物
 .next/
 out/
