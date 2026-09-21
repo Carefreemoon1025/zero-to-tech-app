@@ -222,6 +222,10 @@ node scripts/cdp-check.mjs --url http://localhost:3000/ --reduced-motion        
 | 会话隔离 | 同一 profile 重启浏览器：cookie 还在，历史仍是那 2 条；换 profile：0 条 |
 | 分数动画 | 连续分析两句分别显示 `0.74` / `0.26`（修 bug 前会停在初始占位数字） |
 | 375×812 窄屏 | 无横向溢出；卡片各占一行；弹窗不出屏 |
+| 手机端横向溢出 | 320 / 360 / 390 / 414 / 428 / 768 六档与横屏 812×375，两个页面都 `scrollWidth == clientWidth`，无元素越界 |
+| 手机端点击目标 | 触屏下两个页面 **0 个**小于 44px（修复前实测：导航 59×20、历史记录 86×34、关闭 58×34、开始分析 128×40、联系链接 51×24） |
+| 触屏的 `:hover` | `--touch --tap .stack-card` 点完 `translate` 停在 `none`（修复前 `0px -6px`，也就是"点过就一直浮着"）；`--force-hover hover` 下桌面悬停仍能正常浮起 |
+| 弹窗滚动穿透 | 弹窗打开时背景不再跟随滚动（修复前 `backgroundScrolledWhileModalOpen = true`） |
 | 键盘无障碍 | 打开弹窗焦点落在「关闭」；Tab 不跑出弹窗；关闭后焦点归还触发按钮 |
 | `prefers-reduced-motion` | 不跑入场动画，但卡片仍然可见（`opacity=1`） |
 | 控制台 | 后端在线时错误数 **0**（含 favicon） |
@@ -238,6 +242,31 @@ cd backend && python -m doctest analysis.py
 
 线上（公网）用 curl 覆盖了 HTTP 全链路：两个页面 200、静态资源 200、三个接口正常、
 空文本 400 且 `detail` 为字符串、`/.git/config` 403、重启服务后全部恢复。
+
+### 手机浏览器适配
+
+手机浏览器不是"窄一点的浏览器"。下面四件事只有它才有，也都是实测出来的：
+
+| 问题 | 为什么 | 做法 |
+|---|---|---|
+| 触屏没有真正的悬停 | 手指点过之后 `:hover` 会**留在**元素上，卡片就一直浮着 | `css/mobile.css` 在 `(hover: none)` 下把 12 条悬停规则逐条还原成默认态，改用 `:active` 给按下的即时反馈 |
+| 手指比鼠标粗 | 鼠标能精确到 1px，手指不能 | `(pointer: coarse)` 下把导航/按钮/链接撑到 44px（WCAG 2.5.5 的建议值）；桌面布局一行不动 |
+| 屏幕不是方的 | 刘海、圆角、Home 指示条会压住内容 | viewport 声明 `viewport-fit=cover` 让背景铺满整屏，再用 `env(safe-area-inset-*)` 把内容让开 |
+| 地址栏会伸缩 | 手机上的 `100vh` 算的是"地址栏收起之后"的高度，首屏会跳一下 | `100vh` 与 `100dvh` 双写，不认识 `dvh` 的浏览器用前者兜底 |
+
+**为什么单独一个 `css/mobile.css`、而且在 `layout.jsx` 里最后引入**：这些规则绝大多数是要**覆盖**
+各页面已有写法的（同优先级下靠引入顺序取胜）。集中成最后一层，"手机端到底动了什么"一眼可查、
+要回退也只删一个文件。代价是它与被覆盖的基础值是手动同步关系——文件头写明了这件事。
+
+```bash
+node scripts/cdp-check.mjs --url http://localhost:3000/ --width 375 --height 812 --touch
+node scripts/cdp-check.mjs --url http://localhost:3000/ --touch --tap ".stack-card"          # 复现"悬停粘住"
+node scripts/cdp-check.mjs --url http://localhost:3000/ --force-hover hover --hover ".stack-card"  # 桌面分支
+```
+
+另外补了两条 iOS 的默认行为：`text-size-adjust: 100%`（横屏时 iOS 会自动放大正文字号，
+同一份排版横竖屏对不上）与 `-webkit-tap-highlight-color`（默认那块灰色高光在浅蓝玻璃上很脏）。
+**没有**写 `maximum-scale` / `user-scalable=no`：禁掉双指缩放是无障碍上的硬伤，视力不好的用户就靠它。
 
 ## 10. 踩过的坑（都是实测出来的，不是推演）
 
@@ -279,15 +308,23 @@ anime.js 换掉，页面上就停在挂载时那个占位数字上再也刷不�
 图案位移了整整 2.5 个周期，看起来跟没动一样（相位绕回）。想让折射看得见，
 背景特征的尺度必须明显大于位移量——这也是为什么首页的光斑是"大色块"而不是"细网纹"。
 
+⑩ **无头浏览器里 `(hover: none)` 恒为 true**。做完触屏适配要验证"桌面端悬停还灵不灵"，
+结果怎么测都是"不灵"——因为无头 Chromium 没有真实鼠标，`hover` 媒体特性一直是 `none`
+（而 `pointer: coarse` 是正常的，只查 pointer 就会被骗过去）。
+`Emulation.setEmulatedMedia` 又不认 `hover` 这个特性（传进去照样是 `none`），
+最后只能回到启动参数 `--blink-settings=primaryHoverType=2` 去设 Blink 的悬停能力类型。
+**测出来"坏了"，先怀疑测试环境，再怀疑实现**（同 ⑧）。
+
 ## 11. 目录结构
 
 ```
 作品集/
 ├── frontend/                Next.js 应用
 │   ├── app/                 layout（全站外壳）+ page（主页）+ text-lab/page + icon.svg
-│   ├── components/          HomeView / TextLabView / InputCard / ResultCard / HistoryModal
-│   │                        Nav / PageHeading / AnimatedCardGrid
+│   ├── components/          ShowcaseView / TextLabView / InputCard / ResultCard / HistoryModal
+│   │                        Nav / PageHeading / AnimatedCardGrid / ThemeToggle
 │   ├── css/                 variables / reset / layout / hero / nav / cards / lab / responsive / states
+│   │                        mobile（手机浏览器适配层，最后引入以覆盖前面）
 │   ├── data/site.js         页面固定文案（主页文案已归后端）
 │   └── lib/                 api.js（后端地址与 fetch 的唯一出口）、motion.js（减少动态效果判断）
 ├── backend/                 FastAPI 服务
