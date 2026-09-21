@@ -8,10 +8,13 @@
   --brand: #0071e3;
   --border-soft: rgba(29, 29, 31, 0.08);
   --shadow: 3px 5px 30px rgba(0, 0, 0, 0.08);
-  --grad: linear-gradient(294deg, #ff00f7 0%, #1e98fd 100%);
+  /* 全站统一的主色渐变（首页标题、文字实验室标题共用同一支） */
+  --grad: linear-gradient(104deg, #0f3a6b 0%, #1c6fd0 58%, #38b6ff 100%);
   --radius-panel: 32px;
   --radius-soft: 18px;
   --maxw: 980px;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  /* 自托管中文字体在前（保证各平台一致），系统字体在后兜底：
+     子集之外的生僻字会落到 PingFang / 雅黑上，不会变豆腐块。 */
+  --font: var(--font-cjk), -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }

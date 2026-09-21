@@ -4,7 +4,8 @@
     uvicorn main:app --reload --port 8000
 
 接口：
-    GET  /api/profile   主页文案
+    GET  /api/profile   主页文案（作品、座右铭）
+    GET  /api/stack     展示页的技术栈面板
     POST /api/analyze   文本 → 拼音 + 情感分数
     GET  /api/history   当前会话的历史记录（倒序）
     GET  /api/health    健康检查（部署时给 nginx / 监控用）
@@ -25,6 +26,7 @@ from pydantic import BaseModel
 import analysis
 import db
 from profile import PROFILE
+from stack import STACK
 
 # ---------------------------------------------------------------- 配置
 
@@ -155,6 +157,16 @@ def get_history(
 ) -> list[dict]:
     # 只返回当前 cookie 对应会话的记录 —— 换个浏览器/清掉 cookie 就是另一份历史
     return db.list_records(session_id, limit=max(1, min(limit, 200)))
+
+
+@app.get("/api/stack", summary="展示页的技术栈面板")
+def get_stack() -> list[dict]:
+    """首页那一片玻璃面板的内容。
+
+    这是"内容"不是"布局"，所以放在后端：改一句文案不用重新构建前端，
+    首页第一屏也顺带证明了"这个站的数据是活的"。
+    """
+    return STACK
 
 
 @app.get("/api/health", summary="健康检查")

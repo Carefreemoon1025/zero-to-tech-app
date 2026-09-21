@@ -14,6 +14,7 @@ import AnimatedCardGrid from "./AnimatedCardGrid.jsx";
 import InputCard from "./InputCard.jsx";
 import ResultCard from "./ResultCard.jsx";
 import HistoryModal from "./HistoryModal.jsx";
+import PageBackdrop from "./PageBackdrop.jsx";
 import { textLab } from "../data/site.js";
 import { apiFetch } from "../lib/api.js";
 
@@ -48,23 +49,28 @@ export default function TextLabView() {
   }
 
   return (
-    <AnimatedCardGrid className="dashboard-grid">
-      <article className="hero-stage panel-full">
-        <Nav />
-        <PageHeading title={textLab.heroTitle} subtitle={textLab.heroSubtitle} />
-      </article>
+    <>
+      {/* 和首页共用同一份背景，两个页面才像同一个网站 */}
+      <PageBackdrop />
 
-      <InputCard onResult={setResult} />
-      <ResultCard result={result} onOpenHistory={openHistory} />
+      <AnimatedCardGrid className="dashboard-grid">
+        <article className="hero-stage panel-full">
+          <Nav />
+          <PageHeading title={textLab.heroTitle} subtitle={textLab.heroSubtitle} />
+        </article>
 
-      <HistoryModal
-        open={historyOpen}
-        status={historyStatus}
-        items={history}
-        error={historyError}
-        onRetry={openHistory}
-        onClose={() => setHistoryOpen(false)}
-      />
-    </AnimatedCardGrid>
+        <InputCard onResult={setResult} />
+        <ResultCard result={result} onOpenHistory={openHistory} />
+
+        <HistoryModal
+          open={historyOpen}
+          status={historyStatus}
+          items={history}
+          error={historyError}
+          onRetry={openHistory}
+          onClose={() => setHistoryOpen(false)}
+        />
+      </AnimatedCardGrid>
+    </>
   );
 }

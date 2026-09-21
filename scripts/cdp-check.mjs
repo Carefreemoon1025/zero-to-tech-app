@@ -42,6 +42,8 @@ function parseArgs(argv) {
     height: null,
     screenshot: null, // 截图输出路径
     fullPage: false,
+    clip: null,
+    zoom: 1,
     reducedMotion: false, // 模拟"系统开了减少动态效果"
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -58,6 +60,8 @@ function parseArgs(argv) {
     else if (key === "--height") opts.height = Number(next());
     else if (key === "--screenshot") opts.screenshot = next();
     else if (key === "--full-page") opts.fullPage = true;
+    else if (key === "--clip") opts.clip = next(); // x,y,w,h：只截一块，用来看细节
+    else if (key === "--zoom") opts.zoom = Number(next()); // 设备像素比，用来放大看边缘
     else if (key === "--reduced-motion") opts.reducedMotion = true;
     else throw new Error(`未知参数：${key}`);
   }
@@ -291,6 +295,15 @@ async function main() {
       });
     }
 
+    if (opts.zoom && opts.zoom !== 1) {
+      await cdp.send("Emulation.setDeviceMetricsOverride", {
+        width: opts.width ?? 1280,
+        height: opts.height ?? 900,
+        deviceScaleFactor: opts.zoom,
+        mobile: false,
+      });
+    }
+
     // 视口尺寸（验证响应式/移动端）
     if (opts.width || opts.height) {
       await cdp.send("Emulation.setDeviceMetricsOverride", {
@@ -392,6 +405,12 @@ async function main() {
       const shot = await cdp.send("Page.captureScreenshot", {
         format: "png",
         captureBeyondViewport: opts.fullPage,
+        ...(opts.clip
+          ? (() => {
+              const [cx, cy, cw, ch] = opts.clip.split(",").map(Number);
+              return { clip: { x: cx, y: cy, width: cw, height: ch, scale: 1 } };
+            })()
+          : {}),
       });
       mkdirSync(path.dirname(path.resolve(opts.screenshot)), { recursive: true });
       writeFileSync(opts.screenshot, Buffer.from(shot.data, "base64"));

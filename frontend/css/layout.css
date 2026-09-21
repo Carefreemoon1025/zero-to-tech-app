@@ -10,6 +10,13 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, var(--page-bg) 28%, var(--page-bg) 100%);
 }
 
+/* 全站背景（PageBackdrop）是 position:fixed + z-index:0 的，
+   内容层必须显式抬到它上面，否则会被背景盖住。 */
+.page-content {
+  position: relative;
+  z-index: 1;
+}
+
 .page-shell {
   width: min(var(--maxw), calc(100% - 40px));
   margin: 0 auto;
@@ -17,6 +24,10 @@ body {
 }
 
 .dashboard-grid {
+  /* 页面内容必须显式抬到背景（position:fixed; z-index:0）之上：
+     定位元素永远盖在静态内容上，不抬的话标题区会被背景整块吞掉。 */
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 18px;

@@ -1,7 +1,8 @@
 # zero-to-tech-app
 
-**个人主页 + 文字实验室**：一个完整的全栈 Web 项目。前端 Next.js，后端 FastAPI，
-输入一段中文，拿回**带声调的拼音**和**情感判断**，历史记录按访客会话隔离。
+**液态玻璃作品展示页 + 文字实验室**：一个完整的全栈 Web 项目。前端 Next.js，后端 FastAPI，
+首页用自研的 SVG 折射玻璃展示技术栈，文字实验室把一段中文变成**带声调的拼音**与**情感判断**，
+历史记录按访客会话隔离。
 
 > 🌐 线上地址（阿里云 ECS，nginx + systemd）：**<http://120.25.73.53/>**
 > 💻 源码：<https://github.com/Carefreemoon1025/zero-to-tech-app>
@@ -17,7 +18,7 @@
 
 | 页面 | 做什么 |
 |---|---|
-| `/` 个人主页 | 文案全部来自后端 `GET /api/profile`；后端不可用时显示错误态 + 重试，**不用打底数据糊弄** |
+| `/` 作品展示 | 浅蓝背景 + 液态玻璃面板（真实 SVG 折射）；首屏欢迎语直出，技术栈九个面板从 `GET /api/stack` 拉取，滚动逐个浮现；作品入口与座右铭来自 `GET /api/profile` |
 | `/text-lab` 文字实验室 | 输入中文 → `POST /api/analyze` 返回拼音与情感分数（分数滚动动画）→ 历史记录弹窗 `GET /api/history` |
 
 - 拼音：带声调转写，标点、英文、数字原样保留（`pypinyin`）
@@ -81,7 +82,8 @@ score = 0.5 + min(正向词命中数 × 0.12, 0.45) − min(负向词命中数 �
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/profile` | 主页文案 |
+| GET | `/api/profile` | 作品与个人信息（座右铭、作品入口） |
+| GET | `/api/stack` | 展示页的技术栈面板（九个） |
 | POST | `/api/analyze` | 请求 `{"text":"..."}` → `{text, pinyin, score, label}`，同时落库 |
 | GET | `/api/history` | 当前会话的历史记录，按时间**倒序**（`?limit=`，默认 50，上限 200） |
 | GET | `/api/health` | 健康检查（部署自测用） |
@@ -127,7 +129,37 @@ npm run dev            # 后端地址来自 .env.development
 
 打开 <http://localhost:3000>。后端的交互式接口文档在 <http://127.0.0.1:8000/docs>。
 
-## 7. 部署
+## 7. 液态玻璃是怎么做的
+
+首页那层玻璃不是"半透明白 + 模糊"那么简单，它由三层叠出来：
+
+```
+① 背景      浅蓝渐变 + 三团缓慢游动的光斑 + 一层极淡的纹理
+            —— 玻璃必须"有东西可透"，折射也才有东西可折射
+② 玻璃本体  圆角、半透明底色、1px 亮边、内外阴影、高光
+            —— 体积感来自这些，不来自"白"
+③ 光学层    <span class="glass-warp">：backdrop-filter: blur(2px) url(#位移滤镜) saturate(180%)
+            —— 位移图按每个面板的实际尺寸算出来，沿边框法线折射，中心不动
+```
+
+位移图的算法（`frontend/lib/glassRefraction.js`）参考了开源实现
+[shuding/liquid-glass](https://github.com/shuding/liquid-glass) 与
+[rdev/liquid-glass-react](https://github.com/rdev/liquid-glass-react)，
+物理部分读了 [kube.io《Liquid Glass in the Browser》](https://kube.io/blog/liquid-glass-css-svg/)：
+算每个像素到圆角矩形边框的有符号距离，沿边框法线给位移，大小只取决于"离边框多远"，
+并且沿带宽走一条钟形曲线（贴边和带内侧都是 0）——所以四条边整圈都在折射，中心区域完全不动，
+文字永远清晰。
+
+**只在够宽的屏幕上开折射**：实测滚动时（无头 Chromium，软件渲染）
+无玻璃 p50 29ms ｜ 只有模糊 33.7ms ｜ 模糊+折射 38.7ms。折射贵约 13%，
+而它只在这几处看得出来：面板边缘、背景有颜色过渡的位置。窄屏 GPU 更弱、折射也更难看清，
+所以 < 768px 直接退回纯模糊。
+
+**中文字体**同样自托管：字体栈里的 `PingFang SC` 只有 Mac 有，Windows 会退到微软雅黑，
+同一份作品在不同面试官电脑上长得不一样。用 `scripts/subset-fonts.py` 把
+Noto Sans SC 可变字体裁到本站用到的字，**16.9MB → 253KB**，一个文件覆盖全部字重。
+
+## 8. 部署
 
 ```bash
 scripts/deploy.sh            # 同步 + 装依赖 + 构建 + 重启 + 经 nginx 自测
@@ -135,7 +167,7 @@ scripts/deploy.sh            # 同步 + 装依赖 + 构建 + 重启 + 经 nginx 
 
 拓扑、systemd 单元与 nginx 配置全文、备份与回滚步骤都在 **[`docs/DEPLOY.md`](docs/DEPLOY.md)**。
 
-## 8. 怎么验证的（不是"看起来对"）
+## 9. 怎么验证的（不是"看起来对"）
 
 界面和行为用一个自写的端到端脚本 `scripts/cdp-check.mjs` 驱动**真实无头 Chromium**
 （Chrome DevTools Protocol）逐项断言：它打开页面、跑一段 JS、把结果和**控制台错误**一起打出来，
@@ -162,6 +194,8 @@ node scripts/cdp-check.mjs --url http://localhost:3000/ --reduced-motion        
 | `prefers-reduced-motion` | 不跑入场动画，但卡片仍然可见（`opacity=1`） |
 | 控制台 | 后端在线时错误数 **0**（含 favicon） |
 | 生产构建 | `npm run build` 通过；产物中断言不含 `localhost:8000` |
+| 首页液态玻璃 | 12 个面板的位移滤镜按尺寸生成；开/关折射的像素差异在背景色过渡处 6~7.7（明显），在纯色处微弱——**这是物理事实，不是实现问题** |
+| 中文字体 | 自托管子集生效（`document.fonts` 命中），滚动浮现动画结束后所有面板 `translateY=0 scale=1 opacity=1` |
 
 后端接口另有一组 curl 验证（正常/空文本/超长/坏 JSON/CORS 预检/白名单外来源），
 以及 `analysis.py` 里的 `doctest`：
@@ -173,7 +207,7 @@ cd backend && python -m doctest analysis.py
 线上（公网）用 curl 覆盖了 HTTP 全链路：两个页面 200、静态资源 200、三个接口正常、
 空文本 400 且 `detail` 为字符串、`/.git/config` 403、重启服务后全部恢复。
 
-## 9. 踩过的坑（都是实测出来的，不是推演）
+## 10. 踩过的坑（都是实测出来的，不是推演）
 
 ① **卡片是隐形的**。卡片入场动画在组件挂载时查一次 `.card`，可主页的卡片要等数据到位才渲染——
 挂载那一刻它们还不存在，于是永远停在 CSS 里的 `opacity: 0`：文字抓得到，眼睛看不见。
@@ -196,7 +230,24 @@ anime.js 换掉，页面上就停在挂载时那个占位数字上再也刷不�
 `SIGKILL` 结束 Chrome，它来不及把 cookie 落盘。改成走 CDP 的 `Browser.close` 优雅关闭后，
 行为才是真实的。**测出问题先怀疑测试。**
 
-## 10. 目录结构
+⑥ **折射挂错了属性**。`filter: url(#滤镜)` 和 `backdrop-filter: url(#滤镜)` 是两回事：
+`filter` 作用的是"元素自己画的东西"，不含 backdrop-filter 的结果，对着背景一点效果都没有（实测差异 0.00）。
+我为这件事搭了个最小复现台（`scripts/fixtures/glass-repro.html`）逐条对照，
+才确定必须写成 `backdrop-filter: blur() url(#...)`。
+
+⑦ **面板一变 backdrop root，折射就消失**。`isolation: isolate` 或 `opacity < 1`
+（包括入场动画的 opacity）都会让面板成为 backdrop root，光学层只采得到面板自己的底色。
+所以滚动浮现只动 `transform` 不动 `opacity`——顺带还避免了"动画没跑到内容就没了"的老问题。
+
+⑧ **错的是测量脚本，不是实现**。有一轮我反复得出"折射无效"，最后发现是给截图脚本注入的
+`.stack-card *{visibility:hidden}` 把**光学层自己也藏了**。加上还有一次对照组顺手把模糊半径
+从 16px 改成 2px，测出来的差异其实是模糊的区别。教训：**先确认对照组只差一个变量，再下结论。**
+
+⑨ **周期纹理 + 大位移 = 看不见**。背景是 11px 周期的点阵、位移却有 28px 时，
+图案位移了整整 2.5 个周期，看起来跟没动一样（相位绕回）。想让折射看得见，
+背景特征的尺度必须明显大于位移量——这也是为什么首页的光斑是"大色块"而不是"细网纹"。
+
+## 11. 目录结构
 
 ```
 zero-to-tech-app/
@@ -218,7 +269,7 @@ zero-to-tech-app/
 └── docs/DEPLOY.md           服务器、systemd、nginx、回滚、验证清单
 ```
 
-## 11. 已知局限与可以继续做的
+## 12. 已知局限与可以继续做的
 
 - **情感判断看不懂上下文**：词表匹配对反讽、比喻、双重否定（"我一点都不难过"）会判错；
   要更准就得上模型，那是另一个取舍。词表也只在中文、短文本上调过。
