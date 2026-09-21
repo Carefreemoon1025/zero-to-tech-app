@@ -33,8 +33,8 @@ const cjkFont = localFont({
 });
 
 export const metadata = {
-  title: "zero to tech · 作品展示与文字实验室",
-  description: "作品展示页 + 文字实验室：中文文本的拼音转换与情感分析。",
+  title: "作品集",
+  description: "个人作品集：技术栈展示与文字实验室（中文拼音转换与情感分析）。",
 };
 
 export default function RootLayout({ children }) {

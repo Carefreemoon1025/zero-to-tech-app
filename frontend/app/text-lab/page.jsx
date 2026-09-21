@@ -4,7 +4,7 @@
 import TextLabView from "../../components/TextLabView.jsx";
 
 export const metadata = {
-  title: "文字实验室 · zero to tech",
+  title: "文字实验室 · 作品集",
   description: "把一段中文交给后端，拿回带声调的拼音和情感判断，历史记录按会话隔离。",
 };
 

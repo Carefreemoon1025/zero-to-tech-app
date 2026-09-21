@@ -1,7 +1,7 @@
-# zero-to-tech-app
+# 作品集
 
-**液态玻璃作品展示页 + 文字实验室**：一个完整的全栈 Web 项目。前端 Next.js，后端 FastAPI，
-首页用自研的 SVG 折射玻璃展示技术栈，文字实验室把一段中文变成**带声调的拼音**与**情感判断**，
+**作品展示页 + 文字实验室**：一个完整的全栈 Web 项目。前端 Next.js，后端 FastAPI，
+首页用磨砂玻璃面板展示技术栈，文字实验室把一段中文变成**带声调的拼音**与**情感判断**，
 历史记录按访客会话隔离。
 
 > 🌐 线上地址（阿里云 ECS，nginx + systemd）：**<http://120.25.73.53/>**
@@ -258,7 +258,7 @@ anime.js 换掉，页面上就停在挂载时那个占位数字上再也刷不�
 ## 11. 目录结构
 
 ```
-zero-to-tech-app/
+作品集/
 ├── frontend/                Next.js 应用
 │   ├── app/                 layout（全站外壳）+ page（主页）+ text-lab/page + icon.svg
 │   ├── components/          HomeView / TextLabView / InputCard / ResultCard / HistoryModal

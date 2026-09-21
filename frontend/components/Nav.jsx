@@ -16,7 +16,7 @@ export default function Nav() {
 
   return (
     <div className="hero-topline">
-      <p className="brand-eyebrow">zero to tech</p>
+      <p className="brand-eyebrow">作品集</p>
       <nav className="inline-links hero-nav">
         {items.map((it) => {
           const active =

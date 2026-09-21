@@ -5,8 +5,8 @@ import ShowcaseView from "../components/ShowcaseView.jsx";
 
 // 每个页面自己的标题（会和 layout 里的 title 合并），浏览器标签页能区分两个页面
 export const metadata = {
-  title: "你好 · zero to tech 作品展示",
-  description: "作品展示页：液态玻璃面板 + 技术栈，数据来自后端接口。",
+  title: "作品集",
+  description: "作品展示页：玻璃面板 + 技术栈，数据来自后端接口。",
 };
 
 export default function Page() {
