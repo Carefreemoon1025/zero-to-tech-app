@@ -133,17 +133,17 @@ server {
 改配置前先备份、改完先测再重载：
 
 ```bash
-cp -a /etc/nginx/sites-available/default /home/myue/backups/default.nginx.$(date +%Y%m%d-%H%M%S)
+cp -a /etc/nginx/sites-available/default <部署用户>/backups/default.nginx.$(date +%Y%m%d-%H%M%S)
 nginx -t && systemctl reload nginx
 ```
 
 ## 6. 回滚
 
-模块 3.5 的旧静态站文件一直在 `/home/myue/zero-to-tech`，**一个字节都没动**；
-nginx 旧配置备份在 `/home/myue/backups/default.nginx.20260915-171812`。
+模块 3.5 的旧静态站文件一直在 `<部署用户>/zero-to-tech`，**一个字节都没动**；
+nginx 旧配置备份在 `<部署用户>/backups/default.nginx.20260915-171812`。
 
 ```bash
-cp /home/myue/backups/default.nginx.20260915-171812 /etc/nginx/sites-available/default
+cp <部署用户>/backups/default.nginx.20260915-171812 /etc/nginx/sites-available/default
 nginx -t && systemctl reload nginx
 # 需要的话再停掉新项目：systemctl disable --now zero-to-tech-frontend zero-to-tech-backend
 ```
