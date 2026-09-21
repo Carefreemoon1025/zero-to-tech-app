@@ -12,6 +12,9 @@
  *
  * 参数：
  *   --url <url>        要打开的地址（默认 http://localhost:3000/）
+ *   --touch            模拟触屏设备：媒体查询命中 (hover: none)/(pointer: coarse)，
+ *                      并把鼠标事件转成真实触摸事件（这样"点一下触发 :hover"才会发生）
+ *   --tap <选择器>     在元素上真按一下（配合 --touch 复现触屏上 hover 粘住的问题）
  *   --eval <js>        页面加载后执行的表达式（可为 async，支持 await）
  *   --eval-file <path> 从文件读表达式（长脚本用这个，省得跟 shell 引号打架）
  *   --profile <dir>    浏览器用户目录（默认 .tmp-chrome/profile，用它保留 cookie）
@@ -47,6 +50,8 @@ function parseArgs(argv) {
     hover: null,
     colorScheme: null,
     reducedMotion: false, // 模拟"系统开了减少动态效果"
+    touch: false, // 模拟触屏设备（hover: none / pointer: coarse）
+    tap: null, // CSS 选择器：在上面真按一下（触屏模拟下是真实触摸事件）
   };
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
@@ -68,6 +73,8 @@ function parseArgs(argv) {
     else if (key === "--dark") opts.colorScheme = "dark"; // 模拟系统偏好深色
     else if (key === "--light") opts.colorScheme = "light";
     else if (key === "--reduced-motion") opts.reducedMotion = true;
+    else if (key === "--touch") opts.touch = true; // 模拟触屏（手机浏览器适配验证用）
+    else if (key === "--tap") opts.tap = next(); // CSS 选择器：真按一下，复现触屏上的 :hover
     else throw new Error(`未知参数：${key}`);
   }
   if (opts.evalFile) opts.eval = readFileSync(opts.evalFile, "utf8");
@@ -311,12 +318,27 @@ async function main() {
     }
 
     // 视口尺寸（验证响应式/移动端）
-    if (opts.width || opts.height) {
+    if (opts.width || opts.height || opts.touch) {
       await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: opts.width ?? 1280,
         height: opts.height ?? 800,
         deviceScaleFactor: 1,
-        mobile: false,
+        // mobile: true 时浏览器才按移动设备上报，(hover: none)/(pointer: coarse) 才会命中
+        mobile: opts.touch,
+      });
+    }
+
+    // 触屏模拟：只把视口改窄是不够的（那只是"窄窗口"），
+    // 还要真的开触摸事件，否则 (hover: none) 不成立、也复现不出"手指点完 :hover 粘住"。
+    if (opts.touch) {
+      await cdp.send("Emulation.setTouchEmulationEnabled", {
+        enabled: true,
+        maxTouchPoints: 5,
+      });
+      // 把鼠标事件转成触摸事件：下面 --tap 发出的 press/release 就变成一次真实点按
+      await cdp.send("Emulation.setEmitTouchEventsForMouse", {
+        enabled: true,
+        configuration: "mobile",
       });
     }
 
@@ -363,27 +385,74 @@ async function main() {
          cookies: document.cookie,
        })`;
 
+    // 交互类操作（悬停 / 点击）的告警先攒在这里。
+    // 不能直接往 warnings 里塞：那个变量要到后面 collectProblems() 才有，
+    // 提前引用会撞上 TDZ（让"没找到元素"变成一句 "Cannot access 'warnings'"，
+    // 反而把真正的原因盖掉了）。
+    const interactionWarnings = [];
+
+    // 取元素中心点；元素还没渲染出来就返回 null（交给下面的 waitFor 重试）。
+    // 为什么要等：技术栈卡片这些内容是**接口回来之后**才渲染的，
+    // 页面 load 完的那一刻它还不存在——原来的 --hover 只查一次，
+    // 于是"悬停"在真页面上经常静默失效。
+    async function centerOf(selector) {
+      try {
+        const { result } = await cdp.send("Runtime.evaluate", {
+          expression: `(() => {
+            const el = document.querySelector(${JSON.stringify(selector)});
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 && r.height === 0) return null;
+            return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+          })()`,
+          returnByValue: true,
+        });
+        return result.value ?? null;
+      } catch {
+        return null; // 上下文重建之类的瞬时错误，下一轮重试
+      }
+    }
+
     // 悬停：必须用 CDP 的真实指针事件，合成 MouseEvent 触发不了 CSS 的 :hover
     if (opts.hover) {
-      const { result: box } = await cdp.send("Runtime.evaluate", {
-        expression: `(() => {
-          const el = document.querySelector(${JSON.stringify(opts.hover)});
-          if (!el) return null;
-          const r = el.getBoundingClientRect();
-          return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
-        })()`,
-        returnByValue: true,
-      });
-      if (box.value) {
+      const box = await waitFor(() => centerOf(opts.hover), {
+        timeout: 8000,
+        label: `--hover 等待元素出现：${opts.hover}`,
+      }).catch(() => null);
+      if (box) {
         await cdp.send("Input.dispatchMouseEvent", {
           type: "mouseMoved",
-          x: box.value.x,
-          y: box.value.y,
+          x: box.x,
+          y: box.y,
           buttons: 0,
         });
         await sleep(700); // 等过渡动画走完
       } else {
-        warnings.push(`--hover 没找到元素：${opts.hover}`);
+        interactionWarnings.push(`--hover 没找到元素：${opts.hover}`);
+      }
+    }
+
+    // 点一下：触屏模拟下这两个事件会被转成真实触摸，等价于手指按下去再抬起来。
+    // 这是复现"触屏 :hover 粘住"的唯一办法——合成 MouseEvent 不会触发 CSS :hover。
+    if (opts.tap) {
+      const box = await waitFor(() => centerOf(opts.tap), {
+        timeout: 8000,
+        label: `--tap 等待元素出现：${opts.tap}`,
+      }).catch(() => null);
+      if (box) {
+        for (const type of ["mousePressed", "mouseReleased"]) {
+          await cdp.send("Input.dispatchMouseEvent", {
+            type,
+            x: box.x,
+            y: box.y,
+            button: "left",
+            buttons: 1,
+            clickCount: 1,
+          });
+        }
+        await sleep(900); // 等过渡走完，这时看 :hover 有没有"粘"住
+      } else {
+        interactionWarnings.push(`--tap 没找到元素：${opts.tap}`);
       }
     }
 
@@ -462,7 +531,7 @@ async function main() {
       cookies,
       screenshot: opts.screenshot ?? null,
       consoleErrors: errors,
-      consoleWarnings: warnings,
+      consoleWarnings: [...warnings, ...interactionWarnings],
     };
     console.log(JSON.stringify(output, null, 2));
 

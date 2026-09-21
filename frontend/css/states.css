@@ -70,7 +70,6 @@
   border-radius: 50%;
   background: var(--glass-chip);
   color: var(--ink);
-  font-size: 17px;
   line-height: 1;
   cursor: pointer;
   backdrop-filter: blur(14px) saturate(180%);
@@ -87,6 +86,11 @@
 .theme-toggle:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
+}
+
+/* 图标用内联 SVG：☀/☾ 这类字符 Noto Sans SC 未必收录，靠系统字体兜底会变豆腐块 */
+.theme-icon {
+  display: block;
 }
 
 /* 两枚图标都在 DOM 里，按主题显示其中一枚：这样服务端渲染的标记与客户端一致 */
