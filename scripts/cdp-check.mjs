@@ -219,7 +219,7 @@ async function main() {
       "--disable-features=Translate,MediaRouter",
       `--remote-debugging-port=${opts.port}`,
       `--user-data-dir=${profileDir}`,
-      opts.url,
+      "about:blank", // 真正的目标 URL 等 attach 之后再 Page.navigate
     ],
     { stdio: ["ignore", "ignore", "pipe"] },
   );
@@ -272,7 +272,7 @@ async function main() {
       async () => {
         const res = await fetch(`http://127.0.0.1:${opts.port}/json/list`);
         const list = await res.json();
-        return list.find((t) => t.type === "page" && t.url.startsWith("http"));
+        return list.find((t) => t.type === "page");
       },
       { timeout: opts.timeout, label: "打开页面" },
     );
@@ -284,14 +284,14 @@ async function main() {
     await cdp.send("Page.enable");
     await cdp.send("Network.enable");
 
-    // 指定了视口尺寸就按它重排（验证响应式/移动端），并重新加载一次让页面按新宽度渲染
+    // 模拟"系统里开了减少动态效果"，验证无障碍分支真的生效
     if (opts.reducedMotion) {
-      // 模拟"系统里开了减少动态效果"，验证无障碍分支真的生效
       await cdp.send("Emulation.setEmulatedMedia", {
         features: [{ name: "prefers-reduced-motion", value: "reduce" }],
       });
     }
 
+    // 视口尺寸（验证响应式/移动端）
     if (opts.width || opts.height) {
       await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: opts.width ?? 1280,
@@ -299,9 +299,26 @@ async function main() {
         deviceScaleFactor: 1,
         mobile: false,
       });
-      await cdp.send("Page.reload", { ignoreCache: false });
-      await sleep(500);
     }
+
+    // 自己导航，而不是靠启动参数里的 URL：
+    // 否则"浏览器正在导航"和"我们刚 attach 上"会抢跑，执行上下文一会儿就没了
+    // （表现是 Cannot find default execution context / Execution context was destroyed）。
+    const nav = await cdp.send("Page.navigate", { url: opts.url });
+    if (nav.errorText) throw new Error(`导航失败：${nav.errorText}`);
+    await sleep(300);
+
+    // 先等真的到了目标地址（导航过程中上下文会重建，waitFor 内部会吞掉这类临时错误重试）
+    await waitFor(
+      async () => {
+        const { result } = await cdp.send("Runtime.evaluate", {
+          expression: "location.href",
+          returnByValue: true,
+        });
+        return typeof result.value === "string" && result.value.startsWith(opts.url);
+      },
+      { timeout: opts.timeout, label: `导航到 ${opts.url}` },
+    );
 
     // 等 document 加载完，再执行调用方给的表达式
     await waitFor(
@@ -338,7 +355,9 @@ async function main() {
         }));
         break;
       } catch (error) {
-        const transient = /context was destroyed|Cannot find context/i.test(error.message);
+        const transient = /context was destroyed|Cannot find (default )?execution context/i.test(
+          error.message,
+        );
         if (!transient || attempt >= 4) throw error;
         await sleep(1000); // 等新上下文就绪后重试
       }
