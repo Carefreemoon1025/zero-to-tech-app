@@ -158,14 +158,14 @@ export default function ShowcaseView() {
             <p className="showcase-section-lead">{showcase.workLead}</p>
           </div>
           <Link className="work-card glass" href="/text-lab" data-reveal>
-            <p className="work-kicker">{work.kicker}</p>
-            <h3 className="work-title">{work.title}</h3>
-            <p className="work-copy">{work.copy}</p>
-            <span className="work-link">
-              {work.linkLabel}
-              <span className="work-arrow" aria-hidden="true">
-                →
-              </span>
+            <span className="work-text">
+              <span className="work-kicker">{work.kicker}</span>
+              <span className="work-title">{work.title}</span>
+              <span className="work-copy">{work.copy}</span>
+              <span className="work-link">{work.linkLabel}</span>
+            </span>
+            <span className="work-go" aria-hidden="true">
+              →
             </span>
           </Link>
         </section>

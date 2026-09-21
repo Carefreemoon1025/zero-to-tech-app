@@ -177,13 +177,20 @@
 
 /* ---------------------------------------------------------------- 首屏 */
 
+/* 首屏面板：留白是排版的主角。
+   改之前上下左右是 28/44 的混搭，小标题离标题只有 14px、标题离副标题 16px，
+   而标题本身有 54px 高——所以整体读起来是"挤"的。
+   现在按"大标题四周要有它自己身高一半以上的空隙"来排。 */
 .showcase-hero {
-  padding: 28px 44px 42px;
-  margin-bottom: 34px;
+  /* 首屏居中：面板有 980px 宽，而这一屏只有一句欢迎语——
+     左对齐会让右边空出一大片、内容全挤在左边；居中之后左右两侧的留白是对称的。 */
+  text-align: center;
+  padding: 64px 52px 56px;
+  margin-bottom: 36px;
 }
 
 .showcase-eyebrow {
-  margin-bottom: 14px;
+  margin-bottom: 22px;
   color: var(--ink-muted);
   font-size: 13px;
   font-weight: 600;
@@ -194,10 +201,13 @@
 .showcase-title {
   /* 苹果官网中文标题的观感：字号大但克制、semibold、字距略紧、行距不挤。
      之前 74px 太大，一句欢迎语被拆成"…作品展 / 示页"，读起来是断的。 */
-  max-width: 20em;
-  font-size: clamp(30px, 4.2vw, 54px);
+  max-width: 16em;
+  margin-inline: auto;
+  /* 54px 时标题几乎顶满整块面板，四周就没有呼吸的余地了；
+     46px 上下既保住了"大标题"的分量，又留出了空隙 */
+  font-size: clamp(30px, 3.7vw, 50px);
   font-weight: 600;
-  line-height: 1.18;
+  line-height: 1.22;
   letter-spacing: -0.015em;
   text-wrap: balance;            /* 多行时自动均衡长度，避免最后一行只剩两个字 */
   background: linear-gradient(104deg, #0b2440 6%, #17518f 46%, #2e86cf 84%);
@@ -207,11 +217,11 @@
 }
 
 .showcase-sub {
-  max-width: 40em;
-  margin-top: 16px;
+  max-width: 30em;
+  margin: 24px auto 0;
   color: var(--ink-soft);
-  font-size: clamp(15px, 1.35vw, 17.5px);
-  line-height: 1.72;
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.8;
 }
 
 /* 下滑提示：可点的锚点，键盘也能用（不是纯装饰） */
@@ -219,8 +229,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 30px;
-  padding: 9px 18px;
+  margin-top: 42px;
+  padding: 10px 20px;
   border: 1px solid rgba(13, 43, 78, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.5);
@@ -251,11 +261,11 @@
 /* ---------------------------------------------------------------- 区块 */
 
 .showcase-section {
-  margin-top: 54px;
+  margin-top: 68px;
   scroll-margin-top: 24px;   /* 锚点跳转后标题不要贴到视口顶 */
 }
 
-.showcase-section-head { margin-bottom: 22px; }
+.showcase-section-head { margin-bottom: 28px; }
 
 .showcase-section-title {
   font-size: clamp(24px, 2.6vw, 32px);
@@ -264,7 +274,7 @@
 }
 
 .showcase-section-lead {
-  margin-top: 10px;
+  margin-top: 12px;
   color: var(--ink-soft);
   font-size: 16px;
   line-height: 1.6;
@@ -361,10 +371,15 @@
 
 /* ---------------------------------------------------------------- 作品入口 */
 
+/* 作品卡：整页最后一块，也是通往文字实验室的入口。
+   原来是"宽面板 + 左半边文字"，右边空一大片；现在右边放一个圆形箭头配重，
+   顺便把"这里可以点"这件事说清楚。 */
 .work-card {
   display: grid;
-  gap: 12px;
-  padding: 30px 34px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px 36px;
+  padding: 34px 40px;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
 }
 
@@ -379,6 +394,30 @@
 .work-card:focus-visible {
   outline: 2px solid #1b5fa8;
   outline-offset: 4px;
+}
+
+.work-text {
+  display: grid;
+  gap: 10px;
+}
+
+.work-go {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  color: #17518f;
+  font-size: 22px;
+  box-shadow: 0 10px 24px -12px rgba(12, 46, 96, 0.5);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), background 0.35s ease;
+}
+
+.work-card:hover .work-go {
+  transform: translateX(5px);
+  background: #ffffff;
 }
 
 .work-kicker {
@@ -403,18 +442,9 @@
 }
 
 .work-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   color: #1b5fa8;
   font-size: 15px;
   font-weight: 600;
-}
-
-.work-card:hover .work-arrow { transform: translateX(4px); }
-
-.work-arrow {
-  transition: transform 0.3s ease;
 }
 
 /* ---------------------------------------------------------------- 状态 */
@@ -456,11 +486,16 @@
 }
 
 @media (max-width: 640px) {
-  .showcase-hero { padding: 22px 22px 26px; }
+  .showcase-hero { padding: 30px 22px 32px; }
+  .showcase-eyebrow { margin-bottom: 14px; }
+  .showcase-sub { margin-top: 16px; }
+  .scroll-hint { margin-top: 28px; }
+  .showcase-section { margin-top: 48px; }
   .showcase-title { font-size: clamp(32px, 9vw, 44px); }
   .stack-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .stack-card { padding: 20px 20px 18px; }
-  .work-card { padding: 24px 22px; }
+  .work-card { padding: 26px 24px; gap: 16px 20px; }
+  .work-go { width: 46px; height: 46px; font-size: 18px; }
 
   /* 小屏降低模糊半径与光斑尺寸：移动端 GPU 扛不住大面积 backdrop-filter */
   .glass {

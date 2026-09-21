@@ -1,8 +1,8 @@
 .hero-stage {
-  padding: 8px 0 18px;
-  min-height: 36vh;
   display: grid;
   align-content: center;
+  min-height: 40vh;
+  padding: 40px 0 52px;
 }
 
 .hero-topline {
@@ -25,10 +25,12 @@
   letter-spacing: -0.03em;
 }
 
+/* 与首页标题同一套尺度：以前这里是 96px 封顶，比首页的欢迎语还大一倍，
+   两个页面的"标题感"完全不在一个量级上。 */
 .hero-display {
-  font-size: clamp(56px, 10vw, 96px);
-  line-height: 1.04;
-  letter-spacing: -0.06em;
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   font-weight: 600;
   background: var(--grad);
   -webkit-background-clip: text;
@@ -37,7 +39,7 @@
 }
 
 .hero-subtitle {
-  max-width: 540px;
+  max-width: 620px;
   margin-top: 10px;
   color: var(--text-soft);
   font-size: clamp(18px, 2.2vw, 24px);
