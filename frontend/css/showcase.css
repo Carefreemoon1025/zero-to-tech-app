@@ -4,11 +4,11 @@
    这一页和站内其它页面的视觉语言不同（其它页是白底 + 灰卡），所以样式整体
    收在 .showcase 作用域里，不动 variables.css 里的全局变量。
 
-   玻璃的三层结构（缺一层就不像玻璃）：
+   玻璃的两层结构：
      ① 背景：浅蓝渐变 + 三团缓慢游动的光斑 —— 玻璃必须"有东西可透"
-     ② 底色：半透明白 + 高光描边 + 内外阴影 —— 玻璃的体积感
-     ③ 折射：backdrop-filter 的模糊，加上 SVG feDisplacementMap 的真实扭曲
-        （折射层单独放在 ::before 里，浏览器不支持 url() 滤镜时自动退回纯模糊）
+     ② 玻璃：backdrop-filter 磨砂 + 半透明底色 + 1px 亮边 + 内外阴影
+        —— 体积感来自高光与投影，不来自"白"（底色一度是 72% 的白，
+        结果面板内部成了不透明的白板，背景色一点透不过来）
    ============================================================================ */
 
 .showcase {
@@ -113,12 +113,14 @@
 
 /* ---------------------------------------------------------------- ② 玻璃 */
 
-/* 三层结构（参考 shuding/liquid-glass 与 rdev/liquid-glass-react 的做法）：
-     .glass          容器：圆角、底色、边框、投影、overflow:hidden
-     .glass-warp     光学层：backdrop-filter 把背景糊进来，filter 再把它扭掉
-     内容            压在 warp 之上（z-index 1），所以文字永远清晰
-   折射不是给容器本身加 backdrop-filter，而是加在 warp 这一层上——
-   因为 `backdrop-filter: url(#f)` 只有 Chrome 认，而 `filter: url(#f)` 到处都认。 */
+/* 磨砂玻璃。
+   这里曾经有一层"真实折射"：按每个面板的尺寸生成位移图，用
+   `backdrop-filter: blur() url(#位移滤镜)` 让透过去的背景像隔着流动的液体一样扭曲。
+   实现是对的、也量化验证过（见 README「踩过的坑」），但结论是**不值得留**：
+     · 只在背景有颜色过渡的地方看得出来，纯色渐变处几乎为零（这是光学事实，不是实现问题）；
+     · 代价是滚动时多花约 13% 的时间（12 个图层各带一个 SVG 滤镜）。
+   于是回到最简单也最耐看的做法：模糊 + 提饱和 + 亮边 + 投影。
+   想要那种折射的话，实现思路和量化方法都留在 README 里，随时能加回来。 */
 .glass {
   position: relative;
   /* ⚠️ 这里**不能**写 isolation: isolate 或 opacity（动画也不行）：
@@ -138,6 +140,10 @@
       rgba(255, 255, 255, 0.10) 75%,
       rgba(255, 255, 255, 0.26) 100%
     );
+  /* 磨砂：模糊半径是关键。玻璃底色本来就很透，模糊太小会显得"就是块透明塑料"，
+     太大又会把背景的颜色抹平、失去通透感。14px 是看截图调出来的平衡点。 */
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   box-shadow:
     /* 落地影：离得远、铺得开，面板才像"浮"在背景上 */
     0 34px 60px -30px rgba(12, 46, 96, 0.55),
@@ -149,20 +155,8 @@
   overflow: hidden;
 }
 
-/* 光学层：JS 没跑起来时它就是普通磨砂玻璃；跑起来后
-   lib/glassRefraction.js 会补上按尺寸算好的位移滤镜（内联样式覆盖这里）。 */
-.glass-warp {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-}
-
-/* 内容与高光都压在光学层之上：折射只作用于背景，不作用于文字 */
-.glass > :not(.glass-warp) {
+/* 内容与高光压在底色之上，保证文字清晰 */
+.glass > * {
   position: relative;
   z-index: 1;
 }
@@ -179,15 +173,6 @@
   background:
     radial-gradient(120% 88% at 8% -12%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 58%),
     radial-gradient(90% 70% at 108% 118%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 62%);
-}
-
-/* SVG 滤镜的容器：必须是"宽高为 0 但仍在渲染树里"。
-   用 display:none 会让 filter 引用失效。 */
-.glass-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
 }
 
 /* ---------------------------------------------------------------- 首屏 */
@@ -516,8 +501,8 @@
 
   /* 小屏降低模糊半径与光斑尺寸：移动端 GPU 扛不住大面积 backdrop-filter */
   .glass {
-    backdrop-filter: blur(12px) saturate(170%);
-    -webkit-backdrop-filter: blur(12px) saturate(170%);
+    backdrop-filter: blur(11px) saturate(170%);
+    -webkit-backdrop-filter: blur(11px) saturate(170%);
   }
 
   .blob { filter: blur(44px); }

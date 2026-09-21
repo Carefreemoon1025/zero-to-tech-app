@@ -14,17 +14,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { animate } from "animejs";
 import Nav from "./Nav.jsx";
-import GlassDefs from "./GlassDefs.jsx";
 import PageBackdrop from "./PageBackdrop.jsx";
 import { showcase } from "../data/site.js";
 import { apiFetch } from "../lib/api.js";
-import { useGlassRefraction } from "../lib/useGlassRefraction.js";
 import { useScrollReveal } from "../lib/useScrollReveal.js";
 import { prefersReducedMotion } from "../lib/motion.js";
 
 export default function ShowcaseView() {
   const rootRef = useRef(null);
-  const svgDefsRef = useRef(null);
   const hintRef = useRef(null);
   const [stack, setStack] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -62,9 +59,6 @@ export default function ShowcaseView() {
   // 面板与作品卡都就位之后，才去建立滚动浮现（否则观察不到还不存在的元素）
   useScrollReveal(rootRef, status === "ready");
 
-  // 折射层同理：位移图是按元素实际尺寸算的，要等面板渲染出来
-  useGlassRefraction(rootRef, svgDefsRef, Boolean(profile));
-
   // 一开始提示"下滑"，用户真的开始滚了就把它淡掉——提示的使命结束了
   useEffect(() => {
     const hint = hintRef.current;
@@ -82,13 +76,11 @@ export default function ShowcaseView() {
 
   return (
     <div className="showcase" ref={rootRef}>
-      <GlassDefs ref={svgDefsRef} />
 
       <PageBackdrop />
 
       <div className="showcase-content">
-        <header className="showcase-hero glass" data-glass>
-          <span className="glass-warp" aria-hidden="true" />
+        <header className="showcase-hero glass">
           <Nav />
           <p className="showcase-eyebrow">{showcase.eyebrow}</p>
           <h1 className="showcase-title">{showcase.title}</h1>
@@ -122,8 +114,7 @@ export default function ShowcaseView() {
           )}
 
           {status === "error" && (
-            <div className="glass" role="alert" data-glass>
-              <span className="glass-warp" aria-hidden="true" />
+            <div className="glass" role="alert">
               <p className="showcase-status showcase-status-error">{error}</p>
               <div className="showcase-status">
                 <button type="button" className="status-retry" onClick={load}>
@@ -140,10 +131,8 @@ export default function ShowcaseView() {
                   className="stack-card glass"
                   key={item.key}
                   data-reveal
-                  data-glass
                   style={{ "--accent": item.accent }}
                 >
-                  <span className="glass-warp" aria-hidden="true" />
                   <div className="stack-card-head">
                     <span className="stack-badge">{item.badge}</span>
                     <h3 className="stack-name">{item.name}</h3>
@@ -167,8 +156,7 @@ export default function ShowcaseView() {
               <h2 className="showcase-section-title">作品</h2>
               <p className="showcase-section-lead">{showcase.workLead}</p>
             </div>
-            <Link className="work-card glass" href="/text-lab" data-reveal data-glass>
-              <span className="glass-warp" aria-hidden="true" />
+            <Link className="work-card glass" href="/text-lab" data-reveal>
               <p className="work-kicker">{profile.featuredWork.kicker}</p>
               <h3 className="work-title">{profile.featuredWork.title}</h3>
               <p className="work-copy">{profile.featuredWork.copy}</p>
@@ -183,8 +171,7 @@ export default function ShowcaseView() {
         )}
 
         {profile && (
-          <footer className="showcase-footer glass" data-reveal data-glass>
-            <span className="glass-warp" aria-hidden="true" />
+          <footer className="showcase-footer glass" data-reveal>
             <div className="showcase-footer-item">
               <p className="showcase-footer-label">座右铭</p>
               <p className="showcase-footer-value">{profile.identity.motto}</p>

@@ -129,35 +129,43 @@ npm run dev            # 后端地址来自 .env.development
 
 打开 <http://localhost:3000>。后端的交互式接口文档在 <http://127.0.0.1:8000/docs>。
 
-## 7. 液态玻璃是怎么做的
+## 7. 液态玻璃是怎么做的（以及一段被砍掉的折射）
 
-首页那层玻璃不是"半透明白 + 模糊"那么简单，它由三层叠出来：
+首页那层玻璃由两层叠出来：
 
 ```
 ① 背景      浅蓝渐变 + 三团缓慢游动的光斑 + 一层极淡的纹理
-            —— 玻璃必须"有东西可透"，折射也才有东西可折射
-② 玻璃本体  圆角、半透明底色、1px 亮边、内外阴影、高光
-            —— 体积感来自这些，不来自"白"
-③ 光学层    <span class="glass-warp">：backdrop-filter: blur(2px) url(#位移滤镜) saturate(180%)
-            —— 位移图按每个面板的实际尺寸算出来，沿边框法线折射，中心不动
+            —— 玻璃必须"有东西可透"，否则就是一块贴纸
+② 玻璃      backdrop-filter 磨砂 + 半透明底色 + 1px 亮边 + 内外阴影 + 高光
+            —— 体积感来自高光与投影，不来自"白"
 ```
 
-位移图的算法（`frontend/lib/glassRefraction.js`）参考了开源实现
-[shuding/liquid-glass](https://github.com/shuding/liquid-glass) 与
+### 折射做过、验证过、然后删掉了
+
+一开始我按"真实折射"做：给每个面板按实际尺寸生成一张位移图（圆角矩形有符号距离场 +
+沿边框法线的钟形轮廓），再用 `backdrop-filter: blur(2px) url(#位移滤镜)` 让背景被扭曲。
+算法参考了 [shuding/liquid-glass](https://github.com/shuding/liquid-glass)、
 [rdev/liquid-glass-react](https://github.com/rdev/liquid-glass-react)，
-物理部分读了 [kube.io《Liquid Glass in the Browser》](https://kube.io/blog/liquid-glass-css-svg/)：
-算每个像素到圆角矩形边框的有符号距离，沿边框法线给位移，大小只取决于"离边框多远"，
-并且沿带宽走一条钟形曲线（贴边和带内侧都是 0）——所以四条边整圈都在折射，中心区域完全不动，
-文字永远清晰。
+物理部分读了 [kube.io《Liquid Glass in the Browser》](https://kube.io/blog/liquid-glass-css-svg/)。
 
-**只在够宽的屏幕上开折射**：实测滚动时（无头 Chromium，软件渲染）
-无玻璃 p50 29ms ｜ 只有模糊 33.7ms ｜ 模糊+折射 38.7ms。折射贵约 13%，
-而它只在这几处看得出来：面板边缘、背景有颜色过渡的位置。窄屏 GPU 更弱、折射也更难看清，
-所以 < 768px 直接退回纯模糊。
+实现是对的（开/关折射的像素差异在背景色过渡处 6.0~7.7，明显可见），但结论是**不值得留**：
 
-**中文字体**同样自托管：字体栈里的 `PingFang SC` 只有 Mac 有，Windows 会退到微软雅黑，
-同一份作品在不同面试官电脑上长得不一样。用 `scripts/subset-fonts.py` 把
-Noto Sans SC 可变字体裁到本站用到的字，**16.9MB → 253KB**，一个文件覆盖全部字重。
+- **只在背景有颜色过渡的地方看得出来**。纯色渐变处位移 40px 也几乎无变化——
+  这是光学事实：折射需要可折射的细节。要让整页都看得出来，背景就得足够"花"。
+- **周期纹理 + 大位移 = 看不见**。背景是 11px 周期点阵、位移 28px 时，
+  图案位移了整整 2.5 个周期，看起来跟没动一样（相位绕回）。
+- **贵**。实测滚动 p50：无玻璃 29ms ｜ 只有模糊 33.7ms ｜ 模糊+折射 38.7ms，
+  12 个图层各挂一个 SVG 滤镜多花约 13%。
+
+权衡下来，我选了一个更克制的结果：背景色块给氛围，玻璃用磨砂 + 高光 + 投影，
+滚动更顺、各屏幕上都稳定。**想加回来的话**：`git show 042a2a1:frontend/lib/glassRefraction.js`，
+复现台 `scripts/fixtures/glass-repro.html`，量化工具 `scripts/png-analyze.py` 都还在仓库里。
+
+### 中文字体
+
+自托管 **Noto Sans SC 可变字体**，并用 `scripts/subset-fonts.py` 裁到本站实际用到的字：
+**16.9MB → 253KB**，一个文件覆盖 100~900 全部字重。理由：字体栈里的 `PingFang SC`
+只有 Mac 有，Windows 会退到微软雅黑，同一份作品在不同面试官电脑上长得不一样。
 
 ## 8. 部署
 
@@ -194,7 +202,7 @@ node scripts/cdp-check.mjs --url http://localhost:3000/ --reduced-motion        
 | `prefers-reduced-motion` | 不跑入场动画，但卡片仍然可见（`opacity=1`） |
 | 控制台 | 后端在线时错误数 **0**（含 favicon） |
 | 生产构建 | `npm run build` 通过；产物中断言不含 `localhost:8000` |
-| 首页液态玻璃 | 12 个面板的位移滤镜按尺寸生成；开/关折射的像素差异在背景色过渡处 6~7.7（明显），在纯色处微弱——**这是物理事实，不是实现问题** |
+| 首页液态玻璃 | 用无头浏览器截图逐轮校对出来的：标题字号、面板透明度、背景纹理、两页视觉统一，都是看图之后改的（数字看不出"标题被拆成两行""面板内部是不透明白板"这类问题） |
 | 中文字体 | 自托管子集生效（`document.fonts` 命中），滚动浮现动画结束后所有面板 `translateY=0 scale=1 opacity=1` |
 
 后端接口另有一组 curl 验证（正常/空文本/超长/坏 JSON/CORS 预检/白名单外来源），
@@ -230,7 +238,7 @@ anime.js 换掉，页面上就停在挂载时那个占位数字上再也刷不�
 `SIGKILL` 结束 Chrome，它来不及把 cookie 落盘。改成走 CDP 的 `Browser.close` 优雅关闭后，
 行为才是真实的。**测出问题先怀疑测试。**
 
-⑥ **折射挂错了属性**。`filter: url(#滤镜)` 和 `backdrop-filter: url(#滤镜)` 是两回事：
+⑥ **折射挂错了属性**（这段实现后来删了，但经验留着）。`filter: url(#滤镜)` 和 `backdrop-filter: url(#滤镜)` 是两回事：
 `filter` 作用的是"元素自己画的东西"，不含 backdrop-filter 的结果，对着背景一点效果都没有（实测差异 0.00）。
 我为这件事搭了个最小复现台（`scripts/fixtures/glass-repro.html`）逐条对照，
 才确定必须写成 `backdrop-filter: blur() url(#...)`。
@@ -270,6 +278,9 @@ zero-to-tech-app/
 ```
 
 ## 12. 已知局限与可以继续做的
+
+- **玻璃只有磨砂、没有折射**：原因和实测数据见第 7 节。想加回来代码在 git 历史里
+  （`git show 042a2a1:frontend/lib/glassRefraction.js`）。
 
 - **情感判断看不懂上下文**：词表匹配对反讽、比喻、双重否定（"我一点都不难过"）会判错；
   要更准就得上模型，那是另一个取舍。词表也只在中文、短文本上调过。

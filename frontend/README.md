@@ -29,7 +29,6 @@ components/
   HistoryModal.jsx       历史记录弹窗：GET /api/history
   AnimatedCardGrid.jsx   卡片飞入动画容器（MutationObserver：数据到位后新增的卡片也会飞入）
   ShowcaseView.jsx       首页：液态玻璃作品展示页
-  GlassDefs.jsx          液态玻璃的 SVG 滤镜容器（滤镜按面板尺寸动态生成）
   PageBackdrop.jsx       全站共用背景（浅蓝渐变 + 光斑 + 淡纹理）
   PageHeading.jsx        大标题 + 副标题
   HistoryModal.jsx       历史记录弹窗（焦点陷阱、Esc 关闭、加载/错误态）
@@ -38,8 +37,6 @@ data/site.js             页面固定文案（首屏文案直出，列表数据�
 lib/api.js               后端地址与 fetch 的唯一出口
 lib/motion.js            "减少动态效果"判断（无障碍）
 lib/useScrollReveal.js   滚动浮现（anime.js 的 onScroll 驱动）
-lib/glassRefraction.js   液态玻璃的位移图生成 + 滤镜挂载（核心光学实现）
-lib/useGlassRefraction.js 上面那套东西的 Hook（含性能门槛）
 app/fonts/               自托管中文字体（子集化产物，见 scripts/subset-fonts.py）
 app/icon.svg             站点图标（Next.js 自动接管为 favicon）
 ```
@@ -57,20 +54,27 @@ app/icon.svg             站点图标（Next.js 自动接管为 favicon）
 主页文案（heroTitle / featuredWork / identity）现在唯一的出处是后端 `/api/profile`
 （`backend/profile.py`），`data/site.js` 只留页面标题这类固定文案。
 
-## 两处容易踩的坑（改代码前先看）
+## 玻璃：为什么只有磨砂、没有折射
 
-### 1. 玻璃面板不能有 opacity / isolation
-`.glass` 或它的任何祖先一旦 `opacity < 1`（包括入场动画）或 `isolation: isolate`，
-它就变成 backdrop root，光学层只采得到面板自己的底色、采不到页面背景，折射当场失效
-（实测像素差异从可见掉到 0.00）。所以滚动浮现只动 `transform`，不动 `opacity`。
+这一版曾经实现过**真实折射**（按每个面板尺寸生成位移图，用
+`backdrop-filter: blur() url(#位移滤镜)` 让背景像隔着流动的液体一样扭曲），
+实现是对的、也量化验证过，但最后按取舍删掉了：
 
-### 2. 折射挂在 backdrop-filter 上，不是 filter
-```css
-/* 对：背景真的被扭曲 */
-backdrop-filter: blur(2px) url(#位移滤镜) saturate(180%);
-/* 错：filter 作用的是"元素自己画的东西"，不含 backdrop-filter 的结果，对背景毫无影响 */
-filter: url(#位移滤镜);
-```
+- 只在背景**有颜色过渡**的地方看得出来，纯色渐变处几乎为零——这是光学事实，不是实现问题；
+  背景特征的尺度还必须明显大于位移量，否则周期纹理会发生相位绕回，看起来像没动；
+- 代价是滚动时多花约 13%（12 个图层各挂一个 SVG 滤镜）：实测 p50
+  无玻璃 29ms / 只有模糊 33.7ms / 模糊+折射 38.7ms。
+
+留下的三条经验（改玻璃之前先看）：
+
+1. **面板不能有 `opacity < 1` 或 `isolation: isolate`**：它们会让面板变成 backdrop root，
+   只采得到自己的底色、采不到页面背景。所以滚动浮现只动 `transform`，不动 `opacity`。
+2. **`filter: url()` 和 `backdrop-filter: url()` 不是一回事**：`filter` 作用的是元素自己画的东西，
+   对背景毫无影响（实测差异 0.00），只有 `backdrop-filter: url()` 才扭曲背景。
+3. **底色不能太"白"**：一度用了 72% 的白，面板内部成了不透明白板，背景色一点透不过来，
+   玻璃就成了贴纸。现在的 42%→10%→26% 是看截图调出来的。
+
+想要把折射加回来：`git show 042a2a1:frontend/lib/glassRefraction.js`，
 对照实验在 `scripts/fixtures/glass-repro.html`，量化工具是 `scripts/png-analyze.py`。
 
 ## 中文字体

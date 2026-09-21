@@ -17,7 +17,7 @@ export const showcase = {
   stackLead: "按「从页面到服务器」的顺序排：框架、UI、动画、接口、语言、存储、会话、代理、进程。",
   workLead: "技术栈不是一个清单，是一个点得开的东西。",
   footerNote:
-    "这一页本身也是作品的一部分：面板数据来自后端 /api/stack，玻璃是 CSS backdrop-filter 加一层 SVG 位移折射，滚动浮现由 anime.js 的 onScroll 驱动。",
+    "这一页本身也是作品的一部分：面板数据来自后端 /api/stack，玻璃是 backdrop-filter 磨砂 + 高光 + 投影，滚动浮现由 anime.js 的 onScroll 驱动。",
 };
 
 export const textLab = {
