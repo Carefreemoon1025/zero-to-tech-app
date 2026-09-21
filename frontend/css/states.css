@@ -34,9 +34,22 @@
   margin-bottom: 14px;
 }
 
-/* 用户开了"减少动态效果"就别再让占位块闪 */
+/* 结果区还没有结果时的占位文案 */
+.result-empty {
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.37px;
+}
+
+/* 用户开了"减少动态效果"：占位块不闪，卡片直接显形（JS 那边也不再跑入场动画） */
 @media (prefers-reduced-motion: reduce) {
   .hero-placeholder {
     animation: none;
+  }
+
+  .card {
+    opacity: 1;
+    transform: none;
   }
 }

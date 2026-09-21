@@ -54,6 +54,11 @@
   letter-spacing: -0.12px;
 }
 
+/* 超过后端上限时的字数提示：当场变色，不用等请求回来才报错 */
+.lab-count-over {
+  color: #b42318;
+}
+
 /* 分析请求失败时的提示文案（这一节新增） */
 .lab-error {
   color: #b42318;
@@ -76,6 +81,23 @@
 }
 
 .primary-button:hover { opacity: 0.86; }
+
+/* 提交中 / 文本为空 / 超长时按钮不可点：视觉上要能看出来，不能只是点不动 */
+.primary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 键盘用户必须看得见焦点在哪（鼠标点击不显示，所以用 :focus-visible） */
+.primary-button:focus-visible,
+.ghost-button:focus-visible,
+.modal-close:focus-visible,
+.featured-link:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
 
 .result-stack {
   display: grid;

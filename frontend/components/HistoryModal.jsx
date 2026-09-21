@@ -19,17 +19,43 @@ function formatTime(iso) {
 
 export default function HistoryModal({ open, status, items, error, onRetry, onClose }) {
   const titleId = useId();
+  const panelRef = useRef(null);
   const closeButtonRef = useRef(null);
 
-  // 按 Esc 关闭 + 打开时把焦点移到关闭按钮（键盘用户不用先 Tab 半天）
+  // 打开时：焦点移进弹窗；Esc 关闭；Tab 在弹窗内循环（焦点不会跑到背后的页面上）。
+  // 关闭时把焦点还给打开弹窗的那个按钮——键盘用户不会"掉"到页面顶部。
   useEffect(() => {
     if (!open) return;
-    function onKey(e) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
+    const previouslyFocused = document.activeElement;
     closeButtonRef.current?.focus();
-    return () => document.removeEventListener("keydown", onKey);
+
+    function onKey(e) {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const focusables = panelRef.current?.querySelectorAll(
+        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -42,6 +68,7 @@ export default function HistoryModal({ open, status, items, error, onRetry, onCl
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        ref={panelRef}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-heading">

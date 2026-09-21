@@ -1,35 +1,62 @@
 "use client";
 
-// 结果区卡片。这一节只加了一样东西：右上角的"历史记录"按钮。
-// 点它会让父组件把历史弹窗打开——这张卡自己不管历史长什么样。
-import { useEffect, useRef } from "react";
-import { animate, scrambleText } from "animejs";
+// 结果卡：原文 / 拼音 / 情感分数 / 情感判断。
+//
+// 和课件版本相比有两处**实质修改**，都是踩过坑才改的：
+//
+// 1) 没有结果时不再显示假数据（0.86 / 偏积极）。
+//    面试官点开页面看到的每一条信息都应该是真的：没分析过就老实说"还没有结果"。
+//
+// 2) 分数滚动改成"用 anime.js 动画一个 JS 数值 → 交给 React 渲染"。
+//    课件版本是 `animate(scoreRef.current, { innerHTML: scrambleText(...) })`，
+//    让 anime.js 直接改 DOM 的 innerHTML，这跟 React 抢同一块 DOM：
+//    React 以为自己渲染了 0.74，实际节点早被 anime.js 换掉，页面上就停在挂载时那个
+//    占位数字上再也刷不动（实测：分析完显示的还是初始的 0.86）。
+//    现在 React 独占 DOM，anime.js 只负责算中间值；两边不打架，换新结果还会重新滚。
+import { useEffect, useRef, useState } from "react";
+import { animate } from "animejs";
+import { prefersReducedMotion } from "../lib/motion.js";
+
+const SCORE_ANIMATION_MS = 900;
 
 export default function ResultCard({ result, onOpenHistory }) {
   const cardRef = useRef(null);
-  const scoreRef = useRef(null);
+  const [displayScore, setDisplayScore] = useState(null);
 
-  const original = result
-    ? result.text
-    : "今天的风很轻，适合把脑海里的想法慢慢写下来。";
-  const pinyin = result ? result.pinyin : "jīn tiān de fēng hěn qīng …";
-  const score = result ? result.score : 0.86;
-  const label = result ? result.label : "偏积极";
-
+  // 卡片飞入：只在挂载时跑一次
   useEffect(() => {
-    // 卡片自己淡入：.card 默认 opacity:0，这张卡负责把自己显出来
-    animate(cardRef.current, {
+    if (prefersReducedMotion()) return;
+    const controls = animate(cardRef.current, {
       opacity: [0, 1],
       translateY: [24, 0],
       duration: 700,
       ease: "outBack",
     });
-    // 情感分数滚动归位
-    animate(scoreRef.current, {
-      innerHTML: scrambleText({ chars: "0-9" }),
-      duration: 1500,
-    });
+    return () => controls?.pause?.();
   }, []);
+
+  // 分数滚动：每来一个新结果就重新滚一次
+  useEffect(() => {
+    if (!result) {
+      setDisplayScore(null);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setDisplayScore(result.score);
+      return;
+    }
+    // 动画的是一个普通 JS 对象（不是 DOM）——中间值通过 onUpdate 回到 React state
+    const counter = { value: 0 };
+    const controls = animate(counter, {
+      value: result.score,
+      duration: SCORE_ANIMATION_MS,
+      ease: "outExpo",
+      onUpdate: () => setDisplayScore(counter.value),
+    });
+    return () => controls?.pause?.();
+  }, [result]);
+
+  const score = displayScore ?? result?.score ?? null;
 
   return (
     <article ref={cardRef} className="panel panel-half lab-panel result-panel card">
@@ -38,31 +65,36 @@ export default function ResultCard({ result, onOpenHistory }) {
           <p className="section-kicker">结果区</p>
           <h3>分析结果</h3>
         </div>
-        {/* 这一节新增：打开历史弹窗 */}
         <button type="button" className="ghost-button" onClick={onOpenHistory}>
           历史记录
         </button>
       </div>
-      <div className="result-stack">
-        <div className="result-item">
-          <span>原文</span>
-          <p>{original}</p>
-        </div>
-        <div className="result-item">
-          <span>拼音</span>
-          <p>{pinyin}</p>
-        </div>
-        <div className="result-grid">
-          <div className="result-badge">
-            <span>情感分数</span>
-            <strong data-score ref={scoreRef}>{score}</strong>
+
+      {!result ? (
+        <p className="result-empty">还没有结果，贴一段中文点「开始分析」试试。</p>
+      ) : (
+        // aria-live：分析结果对屏幕阅读器来说是"新出现的内容"，得主动播报
+        <div className="result-stack" aria-live="polite">
+          <div className="result-item">
+            <span>原文</span>
+            <p>{result.text}</p>
           </div>
-          <div className="result-badge">
-            <span>情感判断</span>
-            <strong>{label}</strong>
+          <div className="result-item">
+            <span>拼音</span>
+            <p>{result.pinyin}</p>
+          </div>
+          <div className="result-grid">
+            <div className="result-badge">
+              <span>情感分数</span>
+              <strong>{score === null ? "—" : score.toFixed(2)}</strong>
+            </div>
+            <div className="result-badge">
+              <span>情感判断</span>
+              <strong>{result.label}</strong>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </article>
   );
 }

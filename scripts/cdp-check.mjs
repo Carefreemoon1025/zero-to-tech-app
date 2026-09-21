@@ -23,7 +23,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -38,6 +38,11 @@ function parseArgs(argv) {
     port: 9333,
     keepOpen: false,
     timeout: 20000,
+    width: null, // 视口宽度（配合 --height 用来验证响应式）
+    height: null,
+    screenshot: null, // 截图输出路径
+    fullPage: false,
+    reducedMotion: false, // 模拟"系统开了减少动态效果"
   };
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
@@ -49,6 +54,11 @@ function parseArgs(argv) {
     else if (key === "--port") opts.port = Number(next());
     else if (key === "--keep-open") opts.keepOpen = true;
     else if (key === "--timeout") opts.timeout = Number(next());
+    else if (key === "--width") opts.width = Number(next());
+    else if (key === "--height") opts.height = Number(next());
+    else if (key === "--screenshot") opts.screenshot = next();
+    else if (key === "--full-page") opts.fullPage = true;
+    else if (key === "--reduced-motion") opts.reducedMotion = true;
     else throw new Error(`未知参数：${key}`);
   }
   if (opts.evalFile) opts.eval = readFileSync(opts.evalFile, "utf8");
@@ -84,6 +94,21 @@ function lookupPath(bin) {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// 找一个没被占用的调试端口（已经有一个 CDP 端点在上面就说明被占了）
+async function pickFreeDebugPort(start, attempts = 40) {
+  for (let port = start; port < start + attempts; port += 1) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/json/version`, {
+        signal: AbortSignal.timeout(400),
+      });
+      if (!res.ok) return port; // 有服务但不是 CDP，也不该用
+    } catch {
+      return port; // 连不上 = 空着
+    }
+  }
+  throw new Error(`从 ${start} 起连续 ${attempts} 个端口都被占用`);
+}
 
 async function waitFor(fn, { timeout, interval = 250, label }) {
   const deadline = Date.now() + timeout;
@@ -177,6 +202,11 @@ async function main() {
   const profileDir = path.resolve(opts.profile);
   mkdirSync(profileDir, { recursive: true });
 
+  // 端口预检：上一次跑崩了留下的浏览器进程还占着调试端口时，
+  // 新进程会和它抢，脚本就会连到"另一个浏览器"上，报出莫名其妙的
+  // "Execution context was destroyed"。这里先探一下，被占就往后挪。
+  opts.port = await pickFreeDebugPort(opts.port);
+
   const child = spawn(
     chrome,
     [
@@ -254,6 +284,25 @@ async function main() {
     await cdp.send("Page.enable");
     await cdp.send("Network.enable");
 
+    // 指定了视口尺寸就按它重排（验证响应式/移动端），并重新加载一次让页面按新宽度渲染
+    if (opts.reducedMotion) {
+      // 模拟"系统里开了减少动态效果"，验证无障碍分支真的生效
+      await cdp.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+      });
+    }
+
+    if (opts.width || opts.height) {
+      await cdp.send("Emulation.setDeviceMetricsOverride", {
+        width: opts.width ?? 1280,
+        height: opts.height ?? 800,
+        deviceScaleFactor: 1,
+        mobile: false,
+      });
+      await cdp.send("Page.reload", { ignoreCache: false });
+      await sleep(500);
+    }
+
     // 等 document 加载完，再执行调用方给的表达式
     await waitFor(
       async () => {
@@ -265,6 +314,10 @@ async function main() {
       },
       { timeout: opts.timeout, label: "页面加载完成" },
     );
+    // 再稳一下：Chrome 打开首个页面时可能发生一次进程切换（site isolation），
+    // 切换会销毁旧的执行上下文，正好在这个时间窗口里求值就会报
+    // "Execution context was destroyed"。这是浏览器的正常行为，不是被测代码的问题。
+    await sleep(700);
 
     const expression =
       opts.eval ??
@@ -274,11 +327,22 @@ async function main() {
          cookies: document.cookie,
        })`;
 
-    const { result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
-      expression,
-      awaitPromise: true,
-      returnByValue: true,
-    });
+    let result;
+    let exceptionDetails;
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        ({ result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
+          expression,
+          awaitPromise: true,
+          returnByValue: true,
+        }));
+        break;
+      } catch (error) {
+        const transient = /context was destroyed|Cannot find context/i.test(error.message);
+        if (!transient || attempt >= 4) throw error;
+        await sleep(1000); // 等新上下文就绪后重试
+      }
+    }
 
     // 给页面一点时间把异步的 console 输出吐完
     await sleep(300);
@@ -304,10 +368,21 @@ async function main() {
       warnings.push(`读取 cookie 失败: ${error.message}`);
     }
 
+    // 截图：留在仓库外也行、放进 docs/ 当证据也行（路径由调用方决定）
+    if (opts.screenshot) {
+      const shot = await cdp.send("Page.captureScreenshot", {
+        format: "png",
+        captureBeyondViewport: opts.fullPage,
+      });
+      mkdirSync(path.dirname(path.resolve(opts.screenshot)), { recursive: true });
+      writeFileSync(opts.screenshot, Buffer.from(shot.data, "base64"));
+    }
+
     const output = {
       url: target.url,
       value: result?.value ?? null,
       cookies,
+      screenshot: opts.screenshot ?? null,
       consoleErrors: errors,
       consoleWarnings: warnings,
     };
