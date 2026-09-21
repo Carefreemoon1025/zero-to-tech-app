@@ -2,14 +2,14 @@
 
 // 结果卡：原文 / 拼音 / 情感分数 / 情感判断。
 //
-// 和课件版本相比有两处**实质修改**，都是踩过坑才改的：
+// 有两处是踩过坑之后**特意改掉**的写法，注释留在这儿免得以后又改回去：
 //
 // 1) 没有结果时不再显示假数据（0.86 / 偏积极）。
 //    面试官点开页面看到的每一条信息都应该是真的：没分析过就老实说"还没有结果"。
 //
 // 2) 分数滚动改成"用 anime.js 动画一个 JS 数值 → 交给 React 渲染"。
-//    课件版本是 `animate(scoreRef.current, { innerHTML: scrambleText(...) })`，
-//    让 anime.js 直接改 DOM 的 innerHTML，这跟 React 抢同一块 DOM：
+//    更常见的写法是 `animate(scoreRef.current, { innerHTML: scrambleText(...) })`：
+//    让 anime.js 直接改 DOM 的 innerHTML，这跟 React 抢同一块 DOM——
 //    React 以为自己渲染了 0.74，实际节点早被 anime.js 换掉，页面上就停在挂载时那个
 //    占位数字上再也刷不动（实测：分析完显示的还是初始的 0.86）。
 //    现在 React 独占 DOM，anime.js 只负责算中间值；两边不打架，换新结果还会重新滚。

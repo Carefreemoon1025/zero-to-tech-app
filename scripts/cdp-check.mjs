@@ -397,8 +397,18 @@ async function main() {
       writeFileSync(opts.screenshot, Buffer.from(shot.data, "base64"));
     }
 
+    // 报告"跑完时页面停在哪"，而不是 attach 那一刻的地址（那时还是 about:blank）
+    let finalUrl = opts.url;
+    try {
+      const res = await fetch(`http://127.0.0.1:${opts.port}/json/list`);
+      const page = (await res.json()).find((t) => t.type === "page");
+      if (page?.url) finalUrl = page.url;
+    } catch {
+      /* 拿不到就用请求的地址，不影响结论 */
+    }
+
     const output = {
-      url: target.url,
+      url: finalUrl,
       value: result?.value ?? null,
       cookies,
       screenshot: opts.screenshot ?? null,

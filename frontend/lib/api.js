@@ -16,7 +16,7 @@ export function apiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
-// 会话隔离靠 cookie（模块 6.6）。浏览器默认对跨源请求**不带** cookie
+// 会话隔离靠 cookie。浏览器默认对跨源请求**不带** cookie
 // （fetch 的 credentials 默认是 same-origin），必须显式 include，
 // 否则后端每次都把我们当新访客，历史记录永远只有一条。
 // 后端那边也相应要求 allow_credentials=True —— 两边必须成对出现。

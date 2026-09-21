@@ -1,10 +1,8 @@
 "use client";
 
-// 顶部这一条（品牌 + 导航）——和 4.4 长得一模一样，只是"跳页面"换了写法：
-// 4.4 我们手搓 useRoute()，靠 onClick 调 navigate()、自己监听 popstate；
-// Next.js 替我们写好了那一摊，这里只用：
-//   - <Link href="/..."> 表示"点这里跳到那一页"
-//   - usePathname() 告诉我们"现在地址栏长什么样"（用来高亮当前页）
+// 顶部导航条（品牌 + 两个页面入口）。跳页面全部交给 Next.js：
+//   - <Link href="/...">      声明"点这里跳到那一页"（客户端路由，不整页刷新）
+//   - usePathname()             读当前路径，用来高亮当前页
 // 因为用到了 usePathname、要在浏览器里跑，所以顶上标了 "use client"。
 import Link from "next/link";
 import { usePathname } from "next/navigation";

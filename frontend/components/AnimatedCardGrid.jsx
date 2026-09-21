@@ -3,8 +3,7 @@
 // 用法：<AnimatedCardGrid className="dashboard-grid">… hero + 几张卡片 …</AnimatedCardGrid>
 // 负责"卡片依次飞入"这一份动画。
 //
-// 注意这里和课件版本的差别：课件写的是"挂载时查一次 .card，交给 anime.js"。
-// 接了后端之后这么写会出事：主页的卡片是**数据到位后**才渲染出来的，
+// 这里没有用"挂载时查一次 .card 就交给 anime.js"的写法，因为接了后端之后它会出事：主页的卡片是**数据到位后**才渲染出来的，
 // 挂载那一刻它们还不存在，于是永远留在 CSS 的 opacity: 0 上——内容在页面上是隐形的
 // （实测：主页两张卡 computed opacity = 0，文字抓得到、眼睛看不见）。
 // 所以改成用 MutationObserver 盯着容器：谁后进来，就给谁补一次入场动画。

@@ -5,8 +5,9 @@
   box-shadow: var(--shadow);
 }
 
-/* 卡片的初始状态：藏起来 + 微微下沉，等动画把它们抬起来。
-   cards.js 在浏览器加载完后用 anime.js 给它们做 stagger 入场。 */
+/* 卡片的初始状态：藏起来 + 微微下沉，等 AnimatedCardGrid 用 anime.js 把它们抬起来。
+   这里"先藏"，所以那段动画必须真的执行到：数据到位后才渲染的卡片由
+   MutationObserver 补动画，prefers-reduced-motion 下由 states.css 强制显形。 */
 .card {
   opacity: 0;
   transform: translateY(24px);
