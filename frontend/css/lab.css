@@ -257,3 +257,73 @@
   font-size: 15px;
   line-height: 1.4;
 }
+
+/* ── 逐行分析：列表与小结 ────────────────────────────────────────── */
+
+.result-summary {
+  padding: 12px 16px;
+  border-radius: var(--radius-soft);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.result-list {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-soft);
+  background: var(--surface-soft);
+}
+
+.result-row-text {
+  color: var(--text-main);
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.result-row-pinyin {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.result-row-meta {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.result-row-meta strong {
+  color: var(--text-main);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.result-row-meta span {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* 复制 / 下载：结果卡底部的一排小操作 */
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}

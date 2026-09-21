@@ -19,7 +19,7 @@ import { textLab } from "../data/site.js";
 import { apiFetch } from "../lib/api.js";
 
 export default function TextLabView() {
-  const [result, setResult] = useState(null); // 最近一次分析结果
+  const [results, setResults] = useState([]); // 最近一次分析的结果（逐行模式会有多条）
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyStatus, setHistoryStatus] = useState("idle"); // idle | loading | ready | error
@@ -59,8 +59,8 @@ export default function TextLabView() {
           <PageHeading title={textLab.heroTitle} subtitle={textLab.heroSubtitle} />
         </article>
 
-        <InputCard onResult={setResult} />
-        <ResultCard result={result} onOpenHistory={openHistory} />
+        <InputCard onResults={setResults} />
+        <ResultCard results={results} onOpenHistory={openHistory} />
 
         <HistoryModal
           open={historyOpen}
