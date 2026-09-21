@@ -4,6 +4,7 @@
 输入一段中文，拿回**带声调的拼音**和**情感判断**，历史记录按访客会话隔离。
 
 > 🌐 线上地址（阿里云 ECS，nginx + systemd）：**<http://120.25.73.53/>**
+> 💻 源码：<https://github.com/Carefreemoon1025/zero-to-tech-app>
 > 📄 部署细节：[`docs/DEPLOY.md`](docs/DEPLOY.md)
 
 这个项目按「零到全栈」课程的终点形态独立重建：从课程 demo 里取骨架，
